@@ -1,1 +1,3 @@
-/cadence.db
+/cadence.db*
+.venv/
+__pycache__/
