@@ -81,10 +81,15 @@ async function api(method, url, body) {
       headers: { "Content-Type": "application/json", "X-TZ": String(new Date().getTimezoneOffset()) },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-    if (!res.ok) throw new Error(res.statusText);
+    if (!res.ok) {
+      let msg = res.statusText || "Request failed";
+      try { msg = (await res.json()).error || msg; } catch (_) { /* keep status text */ }
+      throw new Error(msg);
+    }
     return await res.json();
   } catch (e) {
-    toast("Connection issue — change may not have saved", "error");
+    toast(e && e.message && e.message !== "Failed to fetch"
+      ? e.message : "Connection issue — change may not have saved", "error");
     throw e;
   }
 }
@@ -99,17 +104,23 @@ $$(".overlay").forEach((ov) => {
   $$("[data-close]", ov).forEach((b) => b.addEventListener("click", () => closeOverlay(ov)));
 });
 function anyModalOpen() { return $$(".overlay.open").length > 0; }
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && anyModalOpen()) $$(".overlay.open").forEach(closeOverlay);
+});
 
 function armDanger(btn, onConfirm, labelIdle, labelArmed) {
+  btn.dataset.idle = labelIdle;
   btn.textContent = labelIdle;
   btn.addEventListener("click", () => {
-    if (btn.dataset.armed) { onConfirm(); btn.dataset.armed = ""; btn.textContent = labelIdle; }
+    if (btn.dataset.armed) { onConfirm(); disarmDanger(btn); }
     else {
       btn.dataset.armed = "1"; btn.textContent = labelArmed || "Confirm?";
-      setTimeout(() => { if (btn.dataset.armed) { btn.dataset.armed = ""; btn.textContent = labelIdle; } }, 2600);
+      setTimeout(() => { if (btn.dataset.armed) disarmDanger(btn); }, 2600);
     }
   });
 }
+/* reopening a modal must never leave a delete button pre-armed */
+function disarmDanger(btn) { btn.dataset.armed = ""; btn.textContent = btn.dataset.idle || "Delete"; }
 
 // ---------------------------------------------------------- global state
 let STATE = null;
@@ -124,11 +135,12 @@ async function loadState(opts = {}) {
   if (!firstLoadDone) {
     VIEW.sidebarOpen = !!STATE.settings.sidebar_default_open;
     VIEW.windowStart = STATE.today;
+    $("#showArchived").checked = !!STATE.settings.show_archived;
     applySidebarClass();
   }
   document.documentElement.dataset.theme = STATE.settings.theme;
   document.documentElement.dataset.density = STATE.settings.density;
-  $("#zoomSlider").value = STATE.settings.zoom;
+  if (document.activeElement !== $("#zoomSlider")) $("#zoomSlider").value = STATE.settings.zoom;
   renderSidebar();
   renderBoard();
   updateModeUI();
@@ -162,8 +174,13 @@ function emptyState(icon, title, sub) {
   return d;
 }
 
-const expanded = new Set(JSON.parse(localStorage.getItem("cadence_expanded") || "[]"));
-function saveExpanded() { localStorage.setItem("cadence_expanded", JSON.stringify([...expanded])); }
+// localStorage can throw (private mode / corrupt value) — never break the tree over it
+const store = {
+  get(k, fb) { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch (_) { return fb; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* ignore */ } },
+};
+const expanded = new Set(store.get("cadence_expanded", []));
+function saveExpanded() { store.set("cadence_expanded", [...expanded]); }
 
 function renderNodeList(list, byParent, parentKey) {
   const wrap = document.createElement("div");
@@ -223,77 +240,146 @@ function toggleExpand(id, row) {
   row.classList.toggle("open"); saveExpanded();
 }
 
-// ---- sidebar drag & drop (reorder + re-parent) ----
-function beginNodeDrag(e, rowEl, node) {
-  const rect = rowEl.getBoundingClientRect();
-  const ghost = rowEl.cloneNode(true); ghost.classList.add("drag-ghost"); ghost.style.width = rect.width + "px";
-  document.body.appendChild(ghost);
-  const offX = e.clientX - rect.left, offY = e.clientY - rect.top;
-  const placeholder = document.createElement("div"); placeholder.className = "drag-placeholder"; placeholder.style.height = rect.height + "px";
-  rowEl.after(placeholder);
-  rowEl.style.display = "none";
-  document.body.classList.add("dnd-active");
-  VIEW.dragging = true;
-  let info = null, nestEl = null;
-  const moveGhost = (ev) => { ghost.style.left = (ev.clientX - offX) + "px"; ghost.style.top = (ev.clientY - offY) + "px"; };
-  moveGhost(e);
+// ---- shared drag plumbing --------------------------------------------------
+/* Mouse/pen: drag starts after a few px. Touch: hold ~220ms to pick the item up
+   (so the column can still be scrolled), then the drag owns the gesture.
+   Always cleans up on pointercancel — a stuck drag would freeze auto-refresh. */
+function startDrag(e, el, h) {
+  const touch = e.pointerType === "touch";
+  const hold = !h.noHold && touch;   // an explicit grip can start immediately
+  const slop = touch ? 10 : 6;
+  const startX = e.clientX, startY = e.clientY;
+  let active = false, armed = !hold, finished = false, ghost = null, offX = 0, offY = 0, holdTimer = null, lastEv = e;
+  const ph = document.createElement("div");
+  ph.className = "drag-placeholder";
 
-  function onMove(ev) {
-    moveGhost(ev);
-    if (nestEl) { nestEl.classList.remove("nest-target"); nestEl = null; }
-    const el = document.elementFromPoint(ev.clientX, ev.clientY);
-    const overRow = el && el.closest(".node-row");
-    if (overRow && overRow !== rowEl) {
-      const r = overRow.getBoundingClientRect();
-      const relY = (ev.clientY - r.top) / r.height;
-      const parentKey = overRow.parentElement.dataset.parent || "root";
-      if (relY < 0.28) {
-        info = { parentId: parentKey === "root" ? null : parseInt(parentKey), beforeId: parseInt(overRow.dataset.id) };
-        overRow.parentElement.insertBefore(placeholder, overRow);
-      } else if (relY > 0.72) {
-        info = { parentId: parentKey === "root" ? null : parseInt(parentKey), afterId: parseInt(overRow.dataset.id) };
-        const after = overRow.nextElementSibling && overRow.nextElementSibling.classList.contains("node-children") ? overRow.nextElementSibling : overRow;
-        after.after(placeholder);
-      } else {
-        info = { parentId: parseInt(overRow.dataset.id), nest: true };
-        nestEl = overRow; overRow.classList.add("nest-target");
-        if (placeholder.parentElement) placeholder.remove();
-      }
-    } else if (el && el.closest("#nodeTree") && !overRow) {
-      info = { parentId: null, append: true };
-      if (placeholder.parentElement !== $("#nodeTree")) $("#nodeTree").appendChild(placeholder);
-    }
+  function moveGhost(ev) {
+    if (ghost) { ghost.style.left = (ev.clientX - offX) + "px"; ghost.style.top = (ev.clientY - offY) + "px"; }
   }
-  function onUp() {
+  function activate(ev) {
+    if (active) return;
+    active = true; VIEW.dragging = true;
+    const r = el.getBoundingClientRect();
+    offX = ev.clientX - r.left; offY = ev.clientY - r.top;
+    ghost = el.cloneNode(true);
+    ghost.classList.add("drag-ghost");
+    ghost.style.width = r.width + "px";
+    document.body.appendChild(ghost);
+    ph.style.height = r.height + "px";
+    el.after(ph);
+    el.classList.add("dragging-source");
+    document.body.classList.add("dnd-active");
+    if (touch && navigator.vibrate) navigator.vibrate(8);
+    moveGhost(ev);
+    h.onMove && h.onMove(ev, ph);
+  }
+  function detach() {
+    clearTimeout(holdTimer);
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
-    if (nestEl) nestEl.classList.remove("nest-target");
+    window.removeEventListener("pointercancel", onCancel);
+    el.removeEventListener("touchmove", onTouchMove);
     document.body.classList.remove("dnd-active");
-    ghost.remove(); rowEl.style.display = ""; VIEW.dragging = false;
-    if (placeholder.parentElement) placeholder.remove();
-    commitNodeDrop(node, info);
+    VIEW.dragging = false;
+    if (ghost) { ghost.remove(); ghost = null; }
+  }
+  function finish(kind) {
+    if (finished) return;
+    finished = true;
+    const list = ph.parentElement;
+    detach();
+    el.classList.remove("dragging-source");          // show the source again…
+    if (list) list.insertBefore(el, ph);             // …where the placeholder landed
+    ph.remove();
+    if (kind === "drop") h.onDrop(list, ph);
+    else if (kind === "tap") h.onTap && h.onTap();
+    else h.onAbort && h.onAbort();
+  }
+  function onMove(ev) {
+    lastEv = ev;
+    if (!active) {
+      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) <= slop) return;
+      if (touch && !armed) { finish("abort"); return; }  // finger moved first → it was a scroll
+      activate(ev);
+      return;
+    }
+    moveGhost(ev);
+    h.onMove && h.onMove(ev, ph);
+  }
+  function onUp() { finish(active ? "drop" : "tap"); }
+  function onCancel() { finish("abort"); }
+  function onTouchMove(ev) { if (active) ev.preventDefault(); }
+
+  if (touch) {
+    if (hold) holdTimer = setTimeout(() => { armed = true; activate(lastEv); }, 220);
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
   }
   window.addEventListener("pointermove", onMove);
   window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onCancel);
 }
 
-function commitNodeDrop(node, info) {
-  if (!info) return;
-  const newParent = info.parentId;
-  if (info.nest) expanded.add(newParent), saveExpanded();
-  let siblings = STATE.nodes.filter((n) => (n.parent_id || null) === (newParent || null) && n.id !== node.id)
-    .sort((a, b) => a.order_index - b.order_index);
-  let idx = siblings.length;
-  if (info.beforeId !== undefined) { const i = siblings.findIndex((s) => s.id === info.beforeId); if (i >= 0) idx = i; }
-  if (info.afterId !== undefined) { const i = siblings.findIndex((s) => s.id === info.afterId); if (i >= 0) idx = i + 1; }
-  siblings.splice(idx, 0, { id: node.id });
-  const updates = siblings.map((s, i) => ({ id: s.id, parent_id: newParent, order_index: i }));
-  if ((node.parent_id || null) !== (newParent || null)) {
-    const oldSibs = STATE.nodes.filter((n) => (n.parent_id || null) === (node.parent_id || null) && n.id !== node.id)
-      .sort((a, b) => a.order_index - b.order_index);
-    oldSibs.forEach((s, i) => updates.push({ id: s.id, parent_id: node.parent_id || null, order_index: i }));
+function descendantIds(id, out = []) {
+  STATE.nodes.forEach((n) => { if (n.parent_id === id) { out.push(n.id); descendantIds(n.id, out); } });
+  return out;
+}
+
+// ---- sidebar drag & drop (reorder + re-parent) ----
+function beginNodeDrag(e, rowEl, node) {
+  const blocked = new Set([node.id, ...descendantIds(node.id)]);  // never nest into yourself
+  let nestEl = null;
+  const clearNest = () => { if (nestEl) { nestEl.classList.remove("nest-target"); nestEl = null; } };
+  startDrag(e, rowEl, {
+    noHold: true,   // dragging by the grip is explicit — no long-press needed
+    onMove(ev, ph) {
+      clearNest();
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const overRow = el && el.closest(".node-row");
+      if (!overRow || blocked.has(parseInt(overRow.dataset.id, 10))) return;  // hold the last target
+      const r = overRow.getBoundingClientRect();
+      const relY = (ev.clientY - r.top) / (r.height || 1);
+      if (relY < 0.28) {
+        overRow.parentElement.insertBefore(ph, overRow);            // before this row
+      } else if (relY > 0.72) {
+        const kids = overRow.nextElementSibling;
+        (kids && kids.classList.contains("node-children") ? kids : overRow).after(ph);  // after its subtree
+      } else {
+        nestEl = overRow; overRow.classList.add("nest-target");     // drop *into* this node
+        if (ph.parentElement) ph.remove();
+      }
+    },
+    onDrop(list) {
+      const nestId = nestEl ? parseInt(nestEl.dataset.id, 10) : null;
+      clearNest();
+      commitNodeDrop(node, list, nestId);
+    },
+    onAbort: clearNest,
+  });
+}
+
+/* The DOM is already in the dropped order, so read the new tree straight from it. */
+function commitNodeDrop(node, list, nestId) {
+  const byOrder = (a, b) => a.order_index - b.order_index;
+  let newParent, rows;
+  if (nestId != null) {
+    newParent = nestId;
+    expanded.add(nestId); saveExpanded();
+    rows = STATE.nodes.filter((n) => n.parent_id === nestId && n.id !== node.id).sort(byOrder).map((n) => n.id);
+    rows.push(node.id);
+  } else {
+    if (!list) return;
+    const key = list.dataset.parent;
+    newParent = key && key !== "root" ? parseInt(key, 10) : null;
+    rows = $$(":scope > .node-row", list).map((r) => parseInt(r.dataset.id, 10));
   }
-  api("POST", "/api/nodes/reorder", { updates }).then(() => loadState());
+  const updates = rows.map((id, i) => ({ id, parent_id: newParent, order_index: i }));
+  const oldParent = node.parent_id || null;
+  if (oldParent !== newParent) {  // close the gap left behind
+    STATE.nodes.filter((n) => (n.parent_id || null) === oldParent && n.id !== node.id)
+      .sort(byOrder)
+      .forEach((n, i) => updates.push({ id: n.id, parent_id: oldParent, order_index: i }));
+  }
+  api("POST", "/api/nodes/reorder", { updates }).then(() => loadState()).catch(() => loadState());
 }
 
 // =========================================================== BOARD
@@ -302,7 +388,7 @@ function renderBoard() {
   scroll.innerHTML = "";
   const range = STATE.settings.day_range || 7;
   const start = new Date(VIEW.windowStart + "T00:00:00");
-  scroll.appendChild(renderColumn(null, "Backlog", "inbox", true));
+  scroll.appendChild(renderColumn(null, t("unscheduled"), "inbox", true));
   for (let i = 0; i < range; i++) scroll.appendChild(renderColumn(iso(addDays(start, i)), null, null, false));
   const end = addDays(start, range - 1);
   const fmt = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -363,13 +449,13 @@ function renderChunkCard(chunk) {
   const h = Math.max(38, (chunk.duration_min / 60) * unitPx);
   card.style.minHeight = h + "px";
   if (h < 54) card.classList.add("compact");
-  card.dataset.dur = fmtMin(chunk.duration_min);
 
   const fill = document.createElement("div"); fill.className = "chunk-fill";
   fill.style.width = clamp((chunk.done_sec / (chunk.duration_min * 60 || 1)) * 100, 0, 100) + "%";
   card.appendChild(fill);
 
   const top = document.createElement("div"); top.className = "chunk-top";
+  top.dataset.dur = fmtMin(chunk.duration_min);   // shown when the card is too short for text
   const chips = document.createElement("div"); chips.className = "chunk-nodes";
   const maxChips = 3;
   nodes.slice(0, maxChips).forEach((n) => {
@@ -389,7 +475,7 @@ function renderChunkCard(chunk) {
 
   const actions = document.createElement("div"); actions.className = "chunk-actions";
   const complete = iconBtnSm(chunk.done_sec >= chunk.duration_min * 60 ? "check_circle" : "radio_button_unchecked", "Toggle complete");
-  complete.addEventListener("click", (e) => { e.stopPropagation(); api("PATCH", `/api/chunks/${chunk.id}`, { complete: !(chunk.done_sec >= chunk.duration_min * 60) }).then(loadState); });
+  complete.addEventListener("click", (e) => { e.stopPropagation(); api("PATCH", `/api/chunks/${chunk.id}`, { complete: !(chunk.done_sec >= chunk.duration_min * 60) }).then(() => loadState()); });
   const more = iconBtnSm("more_horiz", "Edit chunk");
   more.addEventListener("click", (e) => { e.stopPropagation(); openChunkModal(chunk); });
   actions.append(complete, more);
@@ -405,7 +491,7 @@ function renderChunkCard(chunk) {
   card.appendChild(bar);
 
   const meta = document.createElement("div"); meta.className = "chunk-meta";
-  const effort = Math.max(1, ...nodes.map((n) => n.effort || 5), chunk._effort || 1);
+  const effort = nodes.length ? Math.max(...nodes.map((n) => n.effort || 5)) : 5;  // visuals only
   const dots = document.createElement("div"); dots.className = "effort-dots";
   for (let i = 0; i < 5; i++) { const s = document.createElement("span"); if (i < Math.round(effort / 2)) s.classList.add("on"); dots.appendChild(s); }
   meta.appendChild(dots);
@@ -419,47 +505,23 @@ function renderChunkCard(chunk) {
 
 // ---- board drag & drop ----
 function beginChunkDrag(e, cardEl, chunk) {
-  const startX = e.clientX, startY = e.clientY;
-  let active = false, ghost, placeholder, rect, offX, offY;
-  function activate(ev) {
-    active = true; VIEW.dragging = true;
-    rect = cardEl.getBoundingClientRect(); offX = startX - rect.left; offY = startY - rect.top;
-    ghost = cardEl.cloneNode(true); ghost.classList.add("drag-ghost"); ghost.style.width = rect.width + "px";
-    document.body.appendChild(ghost);
-    placeholder = document.createElement("div"); placeholder.className = "drag-placeholder"; placeholder.style.height = rect.height + "px";
-    cardEl.after(placeholder);
-    cardEl.classList.add("dragging-source");
-    document.body.classList.add("dnd-active");
-    moveGhost(ev);
-  }
-  function moveGhost(ev) { if (ghost) { ghost.style.left = (ev.clientX - offX) + "px"; ghost.style.top = (ev.clientY - offY) + "px"; } }
-  function onMove(ev) {
-    if (!active) { if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > 6) activate(ev); else return; }
-    moveGhost(ev);
-    const el = document.elementFromPoint(ev.clientX, ev.clientY);
-    const list = el && el.closest(".chunk-list");
-    if (!list) return;
-    const overCard = el.closest(".chunk-card");
-    if (overCard && overCard !== cardEl) {
-      const r = overCard.getBoundingClientRect();
-      if (ev.clientY < r.top + r.height / 2) list.insertBefore(placeholder, overCard); else overCard.after(placeholder);
-    } else if (!overCard) list.appendChild(placeholder);
-  }
-  function onUp() {
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup", onUp);
-    if (!active) { openChunkModal(chunk); return; }
-    document.body.classList.remove("dnd-active"); VIEW.dragging = false;
-    cardEl.classList.remove("dragging-source");
-    ghost.remove();
-    const targetList = placeholder.parentElement;
-    const day = targetList.dataset.day === "null" ? null : targetList.dataset.day;
-    targetList.insertBefore(cardEl, placeholder);
-    placeholder.remove();
-    commitChunkDrop(chunk, day);
-  }
-  window.addEventListener("pointermove", onMove);
-  window.addEventListener("pointerup", onUp, { once: true });
+  startDrag(e, cardEl, {
+    onMove(ev, ph) {
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const list = el && el.closest(".chunk-list");
+      if (!list) return;
+      const empty = list.querySelector(".empty-state");
+      if (empty) empty.remove();  // the day is not empty any more
+      const mid = (c) => { const r = c.getBoundingClientRect(); return r.top + r.height / 2; };
+      const next = $$(".chunk-card", list).filter((c) => c !== cardEl).find((c) => ev.clientY < mid(c));
+      if (next) list.insertBefore(ph, next); else list.appendChild(ph);
+    },
+    onDrop(list) {
+      if (!list) return;
+      commitChunkDrop(chunk, list.dataset.day === "null" ? null : list.dataset.day);
+    },
+    onTap() { openChunkModal(chunk); },
+  });
 }
 
 function commitChunkDrop(chunk, day) {
@@ -495,6 +557,7 @@ function openNodeModal(node, parentId) {
   $("#deleteNodeBtn").style.display = node ? "" : "none";
   $("#archiveBtn").style.display = node ? "" : "none";
   $("#archiveBtn").textContent = node && node.archived ? "Unarchive" : "Archive";
+  disarmDanger($("#deleteNodeBtn"));
   openOverlay("#nodeModalOverlay");
   $("#nodeName").focus();
 }
@@ -549,6 +612,7 @@ function openChunkModal(chunk, day) {
   $(".quick-row").style.display = chunk ? "" : "none";
   $(".split-field").style.display = chunk ? "" : "none";
   $("#saveChunkBtn").textContent = chunk ? "Save" : "Create";
+  disarmDanger($("#deleteChunkBtn"));
   renderChunkLinks();
   openOverlay("#chunkModalOverlay");
 }
@@ -614,7 +678,8 @@ $("#saveChunkBtn").addEventListener("click", () => {
     api("PATCH", `/api/chunks/${currentChunk.id}`, { duration_min: duration, done_sec, links })
       .then(() => { closeOverlay("#chunkModalOverlay"); toast(t("saved"), "success"); loadState(); });
   } else {
-    api("POST", "/api/chunks", { duration_min: duration, day: chunkDay, node_ids: working.map((l) => l.node_id) })
+    const links = {}; working.forEach((l) => { links[l.node_id] = l.pct; });
+    api("POST", "/api/chunks", { duration_min: duration, day: chunkDay, links, node_ids: working.map((l) => l.node_id) })
       .then(() => { closeOverlay("#chunkModalOverlay"); toast("Chunk added", "success"); loadState(); });
   }
 });
@@ -694,6 +759,7 @@ function setEffectiveMode(mode, src) {
   api("POST", "/api/mode", { mode, src }).then((s) => { STATE = s; updateModeUI(); renderBoard(); });
 }
 async function pollWagon() {
+  if (!STATE) return;
   const base = (STATE.settings.wagon_base_url || "").replace(/\/$/, "");
   try {
     const res = await fetch(base + "/api/state", { cache: "no-store" });
@@ -708,7 +774,7 @@ async function pollWagon() {
 }
 function setupWagonPolling() {
   if (wagonTimer) clearInterval(wagonTimer);
-  if (!STATE.settings.wagon_enabled) { updateWagonHint("off"); return; }
+  if (!STATE || !STATE.settings.wagon_enabled) { if (STATE) updateWagonHint("off"); return; }
   pollWagon();
   wagonTimer = setInterval(pollWagon, Math.max(3, STATE.settings.wagon_poll_seconds || 10) * 1000);
 }
@@ -720,8 +786,11 @@ function openRolloverModal() {
     const row = document.createElement("label"); row.className = "rollover-item";
     const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = true; cb.dataset.id = c.id;
     const info = document.createElement("div"); info.className = "info";
-    const names = c.node_names.map((n) => n.name).join(", ") || "Unlinked";
-    info.innerHTML = `<div class="ttl">${names}</div><div class="sub">${c.day} · ${fmtMin(c.done_sec / 60)} / ${fmtMin(c.duration_min)}</div>`;
+    const ttl = document.createElement("div"); ttl.className = "ttl";
+    ttl.textContent = c.node_names.map((n) => n.name).join(", ") || "Unlinked";
+    const sub = document.createElement("div"); sub.className = "sub";
+    sub.textContent = `${c.day} · ${fmtMin(c.done_sec / 60)} / ${fmtMin(c.duration_min)}`;
+    info.append(ttl, sub);
     row.append(cb, info); list.appendChild(row);
   });
   openOverlay("#rolloverOverlay");
@@ -740,7 +809,10 @@ $("#nextWindow").addEventListener("click", () => { VIEW.windowStart = iso(addDay
 $("#todayBtn").addEventListener("click", () => { VIEW.windowStart = STATE.today; renderBoard(); });
 $("#refreshBtn").addEventListener("click", () => loadState({ checkRollover: true }));
 $("#settingsBtn").addEventListener("click", openSettingsModal);
-$("#showArchived").addEventListener("change", renderSidebar);
+$("#showArchived").addEventListener("change", (e) => {
+  renderSidebar();
+  api("PUT", "/api/settings", { show_archived: e.target.checked }).catch(() => {});
+});
 let zoomSaveTimer = null;
 $("#zoomSlider").addEventListener("input", (e) => { STATE.settings.zoom = parseInt(e.target.value, 10); renderBoard(); });
 $("#zoomSlider").addEventListener("change", (e) => {
