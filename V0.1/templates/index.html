@@ -70,7 +70,7 @@
         <div class="active-copy">
           <div class="active-kicker"><span class="live-pulse"></span> Up next</div>
           <div class="active-meta">
-            <span id="activeDayLabel" class="chip chip-day">Day 1</span>
+            <span id="activeDayLabel" class="chip chip-day">Today</span>
             <span id="activeTagChip" class="chip chip-tag">#tag</span>
           </div>
           <h2 id="activeTitle">No active task</h2>
@@ -139,6 +139,61 @@
         <button id="closeSettingsBtn" class="btn btn-icon" aria-label="Close settings"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
+        <div class="settings-block appearance-block">
+          <div class="settings-section-intro">
+            <div>
+              <label class="settings-label">Interface style</label>
+              <p class="settings-hint">Choose a complete visual language, not just a color.</p>
+            </div>
+            <span id="themeStatus" class="theme-status">Focus</span>
+          </div>
+          <div id="themeGallery" class="theme-gallery" role="radiogroup" aria-label="Interface theme">
+            <button class="theme-card" type="button" data-theme-choice="focus" role="radio">
+              <span class="theme-preview preview-focus"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><strong>Focus</strong><small>Quiet &amp; precise</small></span>
+              <i class="fa-solid fa-check theme-check"></i>
+            </button>
+            <button class="theme-card" type="button" data-theme-choice="nocturne" role="radio">
+              <span class="theme-preview preview-nocturne"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><strong>Nocturne</strong><small>Deep &amp; cinematic</small></span>
+              <i class="fa-solid fa-check theme-check"></i>
+            </button>
+            <button class="theme-card" type="button" data-theme-choice="editorial" role="radio">
+              <span class="theme-preview preview-editorial"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><strong>Editorial</strong><small>Type-led &amp; timeless</small></span>
+              <i class="fa-solid fa-check theme-check"></i>
+            </button>
+            <button class="theme-card" type="button" data-theme-choice="glass" role="radio">
+              <span class="theme-preview preview-glass"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><strong>Atmosphere</strong><small>Soft &amp; dimensional</small></span>
+              <i class="fa-solid fa-check theme-check"></i>
+            </button>
+            <button class="theme-card" type="button" data-theme-choice="mono" role="radio">
+              <span class="theme-preview preview-mono"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><strong>Terminal</strong><small>Dense &amp; technical</small></span>
+              <i class="fa-solid fa-check theme-check"></i>
+            </button>
+            <button class="theme-card" type="button" data-theme-choice="canvas" role="radio">
+              <span class="theme-preview preview-canvas"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><strong>Canvas</strong><small>Warm &amp; tactile</small></span>
+              <i class="fa-solid fa-check theme-check"></i>
+            </button>
+          </div>
+          <div class="interface-controls">
+            <div class="interface-control">
+              <div><strong>Density</strong><small>Adjust information spacing</small></div>
+              <div class="segmented-control" id="densityControl">
+                <button type="button" data-density="compact">Compact</button>
+                <button type="button" data-density="comfortable">Comfort</button>
+              </div>
+            </div>
+            <div class="interface-control">
+              <div><strong>Motion</strong><small>Interface animations</small></div>
+              <button type="button" id="motionToggle" class="switch-control" role="switch" aria-checked="true"><span></span></button>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
         <div class="settings-block">
           <label class="settings-label">External server URL</label>
           <div class="settings-row">

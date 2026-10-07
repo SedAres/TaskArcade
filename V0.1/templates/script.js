@@ -18,6 +18,18 @@
   let selectedPaletteColor = null;
   let editingTaskId = null;
 
+  const THEME_NAMES = {
+    focus: "Focus",
+    nocturne: "Nocturne",
+    editorial: "Editorial",
+    glass: "Atmosphere",
+    mono: "Terminal",
+    canvas: "Canvas",
+  };
+  let interfaceTheme = localStorage.getItem("flowline_theme") || "focus";
+  let interfaceDensity = localStorage.getItem("flowline_density") || "comfortable";
+  let interfaceMotion = localStorage.getItem("flowline_motion") !== "off";
+
   let externalMode = null; // 'work' | 'free' | null
   let externalSessionId = localStorage.getItem("flowline_ext_session_id") || null;
 
@@ -44,6 +56,10 @@
   const newTagInput = el("newTagInput");
   const addTagBtn = el("addTagBtn");
   const paletteSwatchesEl = el("paletteSwatches");
+  const themeGallery = el("themeGallery");
+  const themeStatus = el("themeStatus");
+  const densityControl = el("densityControl");
+  const motionToggle = el("motionToggle");
 
   const viewSwitch = el("viewSwitch");
   const customDaysInput = el("customDaysInput");
@@ -98,6 +114,67 @@
     const found = APP.tags.find((t) => t.name === tagName);
     return found ? found.color : "#9775FA";
   }
+
+  function relativeDayLabel(dayIndex, currentDay) {
+    const offset = dayIndex - currentDay;
+    if (offset === 0) return "Today";
+    if (offset === 1) return "Tomorrow";
+    if (offset === -1) return "Yesterday";
+    if (offset > 1) return `In ${offset} days`;
+    return `${Math.abs(offset)} days ago`;
+  }
+
+  function applyAppearance() {
+    if (!THEME_NAMES[interfaceTheme]) interfaceTheme = "focus";
+    if (!["compact", "comfortable"].includes(interfaceDensity)) {
+      interfaceDensity = "comfortable";
+    }
+
+    document.documentElement.dataset.theme = interfaceTheme;
+    document.documentElement.dataset.density = interfaceDensity;
+    document.documentElement.dataset.motion = interfaceMotion ? "on" : "off";
+
+    if (themeStatus) themeStatus.textContent = THEME_NAMES[interfaceTheme];
+    if (themeGallery) {
+      themeGallery.querySelectorAll("[data-theme-choice]").forEach((button) => {
+        const selected = button.dataset.themeChoice === interfaceTheme;
+        button.classList.toggle("selected", selected);
+        button.setAttribute("aria-checked", selected ? "true" : "false");
+      });
+    }
+    if (densityControl) {
+      densityControl.querySelectorAll("[data-density]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.density === interfaceDensity);
+      });
+    }
+    if (motionToggle) {
+      motionToggle.classList.toggle("active", interfaceMotion);
+      motionToggle.setAttribute("aria-checked", interfaceMotion ? "true" : "false");
+    }
+  }
+
+  function setTheme(theme) {
+    if (!THEME_NAMES[theme]) return;
+    interfaceTheme = theme;
+    localStorage.setItem("flowline_theme", theme);
+    applyAppearance();
+  }
+
+  function setDensity(density) {
+    if (!["compact", "comfortable"].includes(density)) return;
+    interfaceDensity = density;
+    localStorage.setItem("flowline_density", density);
+    applyAppearance();
+  }
+
+  function toggleMotion() {
+    interfaceMotion = !interfaceMotion;
+    localStorage.setItem("flowline_motion", interfaceMotion ? "on" : "off");
+    applyAppearance();
+  }
+
+  // Apply saved preferences before data arrives to minimize visual switching.
+  applyAppearance();
 
   // ------------------------------------------------------------------
   // API helpers
@@ -252,7 +329,7 @@
     days.forEach((d) => {
       const opt = document.createElement("option");
       opt.value = d;
-      opt.textContent = d === current ? `Day ${d} (current)` : `Day ${d}`;
+      opt.textContent = relativeDayLabel(d, current);
       bulkDaySelect.appendChild(opt);
     });
     if (prevValue && days.includes(Number(prevValue))) {
@@ -284,8 +361,8 @@
       column.innerHTML = `
         <div class="day-column-header">
           <div class="day-title-row">
-            <h4>Day ${dayIndex}</h4>
-            ${dayIndex === current ? '<span class="day-today-badge">Current</span>' : ""}
+            <h4>${relativeDayLabel(dayIndex, current)}</h4>
+            ${dayIndex === current ? '<span class="day-today-badge">Now</span>' : ""}
           </div>
           <div class="day-stats">
             <span>${dayTasks.length} task${dayTasks.length === 1 ? "" : "s"}</span>
@@ -366,7 +443,7 @@
 
     if (!activeTask) {
       activePanel.classList.add("inactive");
-      activeDayLabel.textContent = `Day ${current}`;
+      activeDayLabel.textContent = relativeDayLabel(current, current);
       activeTagChip.textContent = "—";
       activeTitle.textContent = "All tasks complete 🎉";
       activeSubtitle.textContent = "Press Finish Day to move on, or bulk add more tasks.";
@@ -381,7 +458,7 @@
     doneBtn.disabled = false;
     skipBtn.disabled = false;
 
-    activeDayLabel.textContent = `Day ${activeTask.day_index}`;
+    activeDayLabel.textContent = relativeDayLabel(activeTask.day_index, current);
     activeTagChip.textContent = `#${activeTask.tag}`;
     activeTagChip.style.background = `${tagColor(activeTask.tag)}2e`;
     activeTagChip.style.color = tagColor(activeTask.tag);
@@ -804,6 +881,14 @@
 
   saveServerUrlBtn.addEventListener("click", saveServerUrl);
   addTagBtn.addEventListener("click", addTag);
+
+  themeGallery.querySelectorAll("[data-theme-choice]").forEach((button) => {
+    button.addEventListener("click", () => setTheme(button.dataset.themeChoice));
+  });
+  densityControl.querySelectorAll("[data-density]").forEach((button) => {
+    button.addEventListener("click", () => setDensity(button.dataset.density));
+  });
+  motionToggle.addEventListener("click", toggleMotion);
 
   doneBtn.addEventListener("click", () => {
     const task = getActiveTask();
