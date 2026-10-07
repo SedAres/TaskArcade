@@ -1,0 +1,1041 @@
+/* TaskArcade's offline-first bilingual interface layer (English / Persian). */
+import { store, on } from "./core.js";
+
+const FA = {
+  "Skip to content": "رفتن به محتوای اصلی",
+  "today": "امروز", "Today": "امروز", "Tomorrow": "فردا", "Yesterday": "دیروز",
+  "Now": "اکنون", "Plan": "برنامه‌ریزی", "Focus": "تمرکز", "Insights": "تحلیل‌ها", "Stats": "آمار", "Library": "کتابخانه",
+  "Up next": "در ادامه", "queue": "صف کارها", "Nothing scheduled": "کاری زمان‌بندی نشده است",
+  "Add a task below and the timer will be ready.": "از بخش پایین یک وظیفه اضافه کنید تا زمان‌سنج آماده شود.",
+  "Start": "شروع", "Complete": "تکمیل", "Move to end": "انتقال به انتهای روز", "Edit": "ویرایش", "remaining": "باقی‌مانده",
+  "focus 1/4": "تمرکز ۱ از ۴", "Task progress": "پیشرفت وظیفه", "Today at a glance": "نمای کلی امروز",
+  "capacity": "ظرفیت", "done": "انجام‌شده", "open": "باز", "focused": "زمان تمرکز", "breaks": "استراحت‌ها",
+  "No capacity configured.": "ظرفیت روزانه تنظیم نشده است.", "Focus goal": "هدف تمرکز", "Ranked queue": "صف اولویت‌بندی‌شده",
+  "Reminders due": "یادآورها", "Quick add a task": "افزودن سریع وظیفه", "Add": "افزودن", "Paste many lines": "افزودن چندین خط",
+  "Tasks": "وظایف", "manual": "دستی", "hide done": "پنهان‌کردن انجام‌شده‌ها", "show done": "نمایش انجام‌شده‌ها",
+  "Clean up": "پاک‌سازی", "No tasks for this day": "برای این روز وظیفه‌ای ندارید",
+  "Type a line above, apply a template, or paste a whole plan at once.": "یک وظیفه بنویسید، از الگو استفاده کنید یا برنامهٔ کامل خود را یک‌جا وارد کنید.",
+  "Paste lines": "چسباندن فهرست", "Use a template": "استفاده از الگو", "Range": "بازه", "Tomorrow": "فردا",
+  "Next 3 days": "۳ روز آینده", "This week": "این هفته", "Custom…": "بازهٔ دلخواه…", "Everything": "همهٔ روزها", "Days": "روزها",
+  "Sort": "مرتب‌سازی", "Manual order": "ترتیب دستی", "Priority first": "ابتدا اولویت بالا", "Shortest first": "کوتاه‌ترین ابتدا",
+  "Longest first": "بلندترین ابتدا", "A → Z": "الف تا ی", "Newest first": "جدیدترین ابتدا", "Group": "گروه‌بندی",
+  "By day": "بر اساس روز", "By tag": "بر اساس برچسب", "By priority": "بر اساس اولویت", "No grouping": "بدون گروه‌بندی",
+  "Finish day": "پایان روز", "carry open tasks": "انتقال وظایف باز", "ask each time": "هر بار پرسیده شود", "leave them behind": "در همین روز بمانند",
+  "Reopen day": "بازگشایی روز", "Insert day": "درج یک روز", "Start focus session": "شروع جلسهٔ تمرکز", "layout: board": "چیدمان: برد",
+  "Bulk composer": "افزودن گروهی", "Paste or type many lines": "چند وظیفه را بنویسید یا جای‌گذاری کنید", "Schedule for": "زمان‌بندی برای",
+  "Insert example": "درج نمونه", "Add to timeline": "افزودن به برنامه", "Timeline": "برنامهٔ زمانی", "Your plan": "برنامهٔ شما",
+  "drag to prioritise": "برای تغییر اولویت بکشید", "Focus engine": "بخش تمرکز", "Focus session": "جلسهٔ تمرکز",
+  "custom": "دلخواه", "idle": "آماده", "Working on": "در حال انجام", "No task selected": "وظیفه‌ای انتخاب نشده است",
+  "Pick a task from the queue to begin.": "برای شروع، یک وظیفه از صف انتخاب کنید.", "Choose task": "انتخاب وظیفه", "Done": "انجام شد",
+  "Start focus": "شروع تمرکز", "Pause": "مکث", "Break": "استراحت", "Log & stop": "ثبت و پایان",
+  "Today focused": "تمرکز امروز", "Sessions logged": "جلسه‌های ثبت‌شده", "Longest stretch": "طولانی‌ترین جلسه",
+  "Pomodoros": "پومودوروها", "Idle auto-pause": "مکث خودکار هنگام بی‌کاری", "on": "روشن", "0 ready": "۰ آماده",
+  "Session log": "گزارش جلسه‌ها", "refresh": "به‌روزرسانی", "Virtual-day heatmap": "نقشهٔ فعالیت روزانه",
+  "12 weeks": "۱۲ هفته", "less": "کمتر", "more": "بیشتر", "Completed time per day": "زمان سپری‌شده در هر روز",
+  "velocity": "سرعت انجام", "Where the time goes": "زمان صرف چه کاری می‌شود؟", "by tag": "بر اساس برچسب",
+  "When you focus": "چه زمانی بهتر تمرکز می‌کنید؟", "hour of day": "ساعت روز", "Streaks & milestones": "تداوم و دستاوردها",
+  "Level": "سطح", "xp": "امتیاز تجربه", "Day journal": "یادداشت روزانه", "notes & mood": "یادداشت و حال‌وهوا",
+  "Mood": "حال‌وهوا", "—": "—", "🙌 great": "🙌 عالی", "🙂 good": "🙂 خوب", "😐 ok": "😐 معمولی",
+  "😕 rough": "😕 دشوار", "😩 awful": "😩 بسیار دشوار", "Save": "ذخیره", "Activity": "فعالیت‌های اخیر",
+  "recent changes": "تغییرهای اخیر", "Reusable sets": "برنامه‌های آماده", "Templates": "الگوها", "Save today as template": "ذخیرهٔ امروز به‌عنوان الگو",
+  "Repeats itself": "تکرار خودکار", "Recurring tasks": "وظایف تکرارشونده", "New rule": "قاعدهٔ تازه",
+  "Rules materialise into real tasks whenever the timeline reaches them.": "با رسیدن برنامه به زمان مقرر، وظایف تکرارشونده به‌صورت خودکار ساخته می‌شوند.",
+  "Vocabulary": "دسته‌بندی‌ها", "Tags & aliases": "برچسب‌ها و نام‌های کوتاه", "New tag": "برچسب تازه",
+  "Aliases make typing fast:": "نام‌های کوتاه، ثبت وظیفه را سریع‌تر می‌کنند:", "can mean": "می‌تواند به معنی", ". Aliases are matched case-insensitively anywhere a tag can be typed.": " باشد. نام‌های کوتاه در هر جای ورودی برچسب، بدون حساسیت به بزرگی حروف شناخته می‌شوند.",
+  "Safety": "ایمنی و پشتیبان‌گیری", "Data & backup": "داده‌ها و نسخهٔ پشتیبان", "Export backup": "دریافت نسخهٔ پشتیبان",
+  "Import backup": "بازیابی نسخهٔ پشتیبان", "Adopt V0.1 data": "انتقال داده‌های نسخهٔ قبلی", "Export CSV": "خروجی CSV",
+  "Trim history": "پاک‌سازی تاریخچه", "Delete all tasks": "حذف همهٔ وظایف", "Factory reset": "بازنشانی کامل",
+  "Time machine": "مرور تغییرات", "History": "تاریخچه", "clear": "پاک‌کردن", "About": "دربارهٔ برنامه",
+  "Keyboard shortcuts": "میان‌برهای صفحه‌کلید", "Theme studio": "استودیوی ظاهر", "All settings": "همهٔ تنظیمات",
+  "Appearance": "ظاهر برنامه", "Interface language": "زبان رابط کاربری", "Five palettes provide restrained color and typography; eight designs independently change task layout.": "پنج پالت، رنگ و قلمی متعادل فراهم می‌کنند؛ هشت طرح مستقل، چیدمان وظایف را تغییر می‌دهند.",
+  "Colour scheme": "حالت رنگ", "Every theme ships a light and a dark variant, so “dark theme friendly” holds for all five.": "هر پنج پالت در حالت روشن و تیره قابل استفاده‌اند.",
+  "Auto": "خودکار", "Light": "روشن", "Dark": "تیره", "Design layout": "طرح چیدمان",
+  "The structure of the timeline is independent from the colours — mix them freely.": "چیدمان برنامه مستقل از رنگ‌هاست؛ ترکیب دلخواهتان را انتخاب کنید.",
+  "Default design": "طرح پیش‌فرض", "Board": "برد", "Console": "کنسول", "Table": "جدول", "Stream": "جریان", "Tiles": "کاشی‌ها",
+  "Density": "تراکم", "Compact": "فشرده", "Cozy": "متعادل", "Roomy": "باز و خوانا", "Accent": "رنگ تأکیدی",
+  "Custom": "دلخواه", "reset": "بازنشانی", "Fine tuning": "تنظیم دقیق", "Corner radius": "گردی گوشه‌ها",
+  "Text size": "اندازهٔ متن", "Animations": "حرکت‌های تصویری", "Respects reduced-motion by default": "تنظیم کاهش حرکت دستگاه را رعایت می‌کند",
+  "Translucency": "شفافیت لایه‌ها", "Blur and layered transparency": "تاری و شفافیت لایه‌ها", "High contrast": "کنتراست بالا",
+  "Stronger borders and text": "مرزها و متن خواناتر", "Preferences": "ترجیحات", "Settings": "تنظیمات",
+  "Behaviour": "رفتار", "Time & day": "زمان و روز", "Timer": "زمان‌سنج", "Alerts": "هشدارها", "Sync": "همگام‌سازی", "Keys": "میان‌برها",
+  "Greeting": "پیام خوشامد", "Default task length (minutes)": "مدت پیش‌فرض وظیفه (دقیقه)", "Auto-complete at zero": "تکمیل خودکار در پایان زمان",
+  "When a countdown reaches 0:00, mark the task done": "با رسیدن زمان‌سنج به صفر، وظیفه تکمیل شود",
+  "Show finished tasks": "نمایش وظایف انجام‌شده", "Keep completed work visible in the list": "وظایف تکمیل‌شده در فهرست باقی بمانند",
+  "Notes inline": "نمایش یادداشت در فهرست", "Preview task notes inside the list": "یادداشت هر وظیفه در همان فهرست دیده شود",
+  "Compact metadata": "جزئیات فشرده", "Hide secondary details on task rows": "جزئیات فرعی در ردیف وظیفه پنهان شوند",
+  "Confirm destructive actions": "تأیید کارهای برگشت‌ناپذیر", "Ask before deleting or resetting": "پیش از حذف یا بازنشانی، تأیید گرفته شود",
+  "Work-in-progress limit": "حد وظایف هم‌زمان", "Warn when more than this many tasks are open in one day.": "اگر تعداد وظایف باز روز از این مقدار بیشتر شود، هشدار داده می‌شود.",
+  "Undo depth": "تعداد مراحل بازگشت", "Day rollover hour": "ساعت آغاز روز کاری", "Times before this hour count as the previous day.": "زمان‌های پیش از این ساعت به روز قبل تعلق می‌گیرند.",
+  "Workday starts": "شروع روز کاری", "Workday ends": "پایان روز کاری", "Daily capacity (minutes)": "ظرفیت روزانه (دقیقه)",
+  "Daily focus goal (minutes)": "هدف تمرکز روزانه (دقیقه)", "Duration display": "نمایش مدت‌زمان", "Week starts on": "آغاز هفته",
+  "Monday": "دوشنبه", "Sunday": "یکشنبه", "Saturday": "شنبه", "Focus (min)": "تمرکز (دقیقه)", "Short break (min)": "استراحت کوتاه (دقیقه)",
+  "Long break (min)": "استراحت بلند (دقیقه)", "Cycles before long break": "تعداد چرخه تا استراحت بلند",
+  "Auto-start next phase": "شروع خودکار مرحلهٔ بعد", "Roll straight from focus into a break": "پس از تمرکز، استراحت به‌صورت خودکار آغاز شود",
+  "Countdown runs": "زمان‌سنج در چه زمانی اجرا شود", "only during a focus session": "فقط هنگام جلسهٔ تمرکز", "whenever the page is open": "تا وقتی برنامه باز است",
+  "only when I press start": "فقط با فشردن دکمهٔ شروع", "Auto-pause after idle (seconds)": "مکث خودکار پس از بی‌کاری (ثانیه)",
+  "Chime at phase end": "اعلان صوتی در پایان مرحله", "Generated tone, no audio files needed": "صدای اعلان در خود برنامه ساخته می‌شود",
+  "Volume": "بلندی صدا", "Browser notifications": "اعلان‌های مرورگر", "Requires permission from your browser": "به اجازهٔ مرورگر نیاز دارد",
+  "Remind me before a scheduled task (minutes)": "یادآوری پیش از وظیفهٔ زمان‌بندی‌شده (دقیقه)",
+  "Look-ahead window (minutes)": "بازهٔ بررسی یادآورها (دقیقه)",
+  "Reminders appear in the Now view and, if allowed, as system notifications while the app is open.": "یادآورها در نمای اکنون نمایش داده می‌شوند و در صورت اجازه، اعلان سیستمی هم می‌فرستند.",
+  "External work/free service": "سرویس وضعیت کار یا استراحت", "Polled every 10 seconds; while the service reports": "هر ۱۰ ثانیه بررسی می‌شود؛ تا وقتی سرویس وضعیت",
+  "work": "کار", ", countdowns run.": "را گزارش کند، زمان‌سنج اجرا می‌شود.", "unknown": "نامشخص", "Not configured": "تنظیم نشده",
+  "Task": "وظیفه", "Edit task": "ویرایش وظیفه", "Title": "عنوان", "Notes": "یادداشت", "Tag": "برچسب", "Day": "روز",
+  "Priority": "اولویت", "None": "بدون اولویت", "Low": "کم", "Medium": "متوسط", "High": "بالا", "Duration": "مدت‌زمان",
+  "Elapsed time is preserved when you change the length.": "با تغییر مدت‌زمان، زمان سپری‌شده حفظ می‌شود.", "Scheduled at": "زمان‌بندی برای",
+  "Remind me": "یادآوری در", "Subtasks": "گام‌های فرعی", "Estimated pomodoros": "پومودوروهای برآوردشده",
+  "Apply to all tasks with this tag": "اعمال برای همهٔ وظایف این برچسب", "Set duration for #tag": "تنظیم مدت‌زمان برچسب",
+  "Delete": "حذف", "Duplicate": "ایجاد نسخهٔ دیگر", "Pin": "سنجاق‌کردن", "Repeat…": "تکرار…", "esc": "خروج",
+  "Cheat sheet": "راهنمای سریع", "Keyboard & gestures": "صفحه‌کلید و حرکت‌های لمسی", "Touch gestures": "حرکت‌های لمسی",
+  "Swipe right": "کشیدن به راست", "on a task to complete it.": "روی وظیفه برای تکمیل آن.",
+  "Swipe left": "کشیدن به چپ", "on a task to move it to the end of the day.": "روی وظیفه برای انتقال آن به انتهای روز.",
+  "Long press": "لمس طولانی", "a task for the action sheet (edit, split, duplicate, delete).": "روی وظیفه برای دیدن گزینه‌ها (ویرایش، تقسیم، تکثیر یا حذف).",
+  "Drag the handle": "کشیدن دستگیره", "to reorder.": "برای تغییر ترتیب.", "Pull down": "کشیدن صفحه به پایین",
+  "on the Now view to refresh from the server.": "در نمای اکنون برای دریافت آخرین تغییرها.", "Quick-add cheat sheet": "راهنمای افزودن سریع",
+  "Actions": "گزینه‌ها", "New": "تازه", "Form": "فرم", "Cancel": "لغو", "Are you sure?": "آیا مطمئن هستید؟", "Confirm": "تأیید",
+  "release to refresh": "برای به‌روزرسانی رها کنید", "Offline — changes are queued locally.": "آفلاین هستید؛ تغییرها ذخیره می‌شوند تا بعداً همگام‌سازی شوند.",
+  "No data yet": "هنوز داده‌ای ثبت نشده است", "No history yet.": "هنوز سابقه‌ای ثبت نشده است.",
+  "Nothing to plot yet.": "برای رسم نمودار داده‌ای وجود ندارد.", "Tag some tasks and their weight will appear here.": "به چند وظیفه برچسب بزنید تا سهم هر دسته نمایش داده شود.",
+  "No steps yet.": "هنوز گامی ثبت نشده است.", "No day notes yet. Finish a day or write a line above.": "هنوز یادداشتی ندارید؛ روز را پایان دهید یا یادداشتی بنویسید.",
+  "No activity recorded yet.": "هنوز فعالیتی ثبت نشده است.", "Nothing queued. Add a task and it will appear here.": "صف خالی است؛ با افزودن وظیفه، آن را اینجا می‌بینید.",
+  "No sessions yet.": "هنوز جلسه‌ای ثبت نشده است.", "No recurring tasks yet.": "هنوز وظیفهٔ تکرارشونده‌ای ندارید.", "No templates yet.": "هنوز الگویی ندارید.",
+  "No tags yet.": "هنوز برچسبی ندارید.", "No tasks yet": "هنوز وظیفه‌ای ثبت نشده است", "Add one": "افزودن وظیفه",
+  "No task title found": "عنوان وظیفه را وارد کنید", "A task needs a title": "برای وظیفه عنوان بنویسید", "Saved": "ذخیره شد",
+  "Nothing to undo": "تغییری برای بازگردانی وجود ندارد", "Could not load insights": "بارگذاری تحلیل‌ها انجام نشد",
+  "Journal saved": "یادداشت روز ذخیره شد", "Could not save the note": "ذخیرهٔ یادداشت انجام نشد",
+  "Choose a date": "انتخاب تاریخ", "Go to date": "رفتن به تاریخ", "Back to current day": "بازگشت به روز جاری",
+  "Edit historical day": "ویرایش اطلاعات روز", "Historical data": "داده‌های گذشته", "Edit day": "ویرایش روز",
+  "Add task": "افزودن وظیفه", "Add a task": "افزودن وظیفه", "Save changes": "ذخیرهٔ تغییرها", "Edit session": "ویرایش جلسه",
+  "Delete session": "حذف جلسه", "Focus session": "جلسهٔ تمرکز", "Break session": "جلسهٔ استراحت", "Planned": "برنامه‌ریزی‌شده",
+  "Actual / elapsed": "واقعی / سپری‌شده", "Completed": "تکمیل‌شده", "Session type": "نوع جلسه", "Task": "وظیفه",
+  "Current period": "بازهٔ جاری", "Previous period": "بازهٔ پیشین", "Estimate accuracy": "دقت برآورد",
+  "Goal days": "روزهای رسیدن به هدف", "Average focus / day": "میانگین تمرکز روزانه", "Compared with previous period": "در مقایسه با بازهٔ پیشین",
+  "Historical days — select a day to review or edit its records.": "روزهای گذشته — برای مرور یا ویرایش اطلاعات، یک روز را انتخاب کنید.",
+  "Every day": "هر روز", "Weekdays": "روزهای کاری", "Weekends": "آخر هفته", "Monthly": "ماهانه",
+  "No data yet": "هنوز داده‌ای ثبت نشده است", "No tasks found for this day.": "برای این روز وظیفه‌ای پیدا نشد.",
+  "Your changes are saved locally and remain on this device.": "تغییرهای شما روی همین دستگاه نگهداری می‌شوند.",
+  "Help & user guide": "راهنمای استفاده", "Open the complete guide": "بازکردن راهنمای کامل", "Getting started": "شروع به کار",
+  "Plan a day": "برنامه‌ریزی روز", "Run a focus session": "اجرای جلسهٔ تمرکز", "Read your analytics": "خواندن گزارش‌ها",
+  "Edit a past day": "ویرایش روزهای گذشته", "Calendar and Persian dates": "تقویم و تاریخ شمسی", "Back up your work": "پشتیبان‌گیری از داده‌ها",
+  "Close": "بستن", "Previous month": "ماه پیش", "Next month": "ماه بعد", "Select a day": "انتخاب روز",
+  "No sessions recorded for this day.": "برای این روز جلسه‌ای ثبت نشده است.", "No tasks recorded for this day.": "برای این روز وظیفه‌ای ثبت نشده است.",
+  "Archive": "بایگانی", "Restore": "بازیابی", "View records": "مشاهدهٔ اطلاعات",
+};
+
+
+// Additional product, analytics, calendar and historical-edit vocabulary.
+// Kept separate from the original phrase table to make localization reviews
+// and future contributor additions straightforward.
+Object.assign(FA, {
+  "Language & calendar": "زبان و تقویم",
+  "Language &amp; calendar": "زبان و تقویم",
+  "Choose English or فارسی. Persian enables a native right-to-left interface, Persian number formatting and the Solar Hijri calendar by default.": "زبان انگلیسی یا فارسی را انتخاب کنید. با انتخاب فارسی، رابط راست‌چین، رقم‌های فارسی و تقویم هجری شمسی به‌طور پیش‌فرض فعال می‌شوند.",
+  "Calendar system": "نوع تقویم",
+  "Follow language": "هماهنگ با زبان",
+  "Solar Hijri (Jalali / Shamsi)": "هجری شمسی",
+  "Gregorian": "میلادی",
+  "Date for virtual day 1": "تاریخ متناظر با روز مجازی اول",
+  "1405/01/01": "۱۴۰۵/۰۱/۰۱",
+  "Use the selected calendar format. Changing this anchor changes labels, not your tasks.": "تاریخ را با قالب تقویم انتخاب‌شده وارد کنید. تغییر این مبدأ فقط برچسب تاریخ را عوض می‌کند، نه وظایف را.",
+  "Time zone": "منطقهٔ زمانی",
+  "Used for calendar labels and local scheduling. Leave blank to use this device’s time zone.": "برای نمایش تاریخ و زمان‌بندی محلی استفاده می‌شود. برای استفاده از منطقهٔ زمانی دستگاه، این کادر را خالی بگذارید.",
+  "Persian typeface": "قلم فارسی",
+  "All four typefaces are bundled and load locally when selected. No external font service is contacted.": "هر چهار قلم همراه برنامه هستند و هنگام انتخاب از همین دستگاه بارگذاری می‌شوند؛ هیچ درخواستی به سرویس قلم بیرونی فرستاده نمی‌شود.",
+  "Numerals": "شیوهٔ نمایش رقم‌ها",
+  "Match language": "هماهنگ با زبان",
+  "Persian numerals": "رقم‌های فارسی",
+  "Latin numerals": "رقم‌های لاتین",
+  "Vazirmatn": "وزیرمتن",
+  "Estedad": "استعداد",
+  "Noto Naskh Arabic": "قلم نسخ نوتو",
+  "Sahel": "ساحل",
+  "Help & user guide": "راهنما و شیوهٔ استفاده",
+  "A practical introduction to planning, focus sessions, analytics, history editing and Persian dates.": "راهنمایی کاربردی برای برنامه‌ریزی، جلسه‌های تمرکز، تحلیل‌ها، ویرایش گذشته و تاریخ شمسی.",
+  "Analytics": "تحلیل‌ها",
+  "Work patterns, clearly explained": "الگوهای کاری، روشن و کاربردی",
+  "Reporting period": "بازهٔ گزارش",
+  "Last 7 days": "۷ روز گذشته",
+  "Last 30 days": "۳۰ روز گذشته",
+  "Last 90 days": "۹۰ روز گذشته",
+  "Last 12 months": "۱۲ ماه گذشته",
+  "All history": "تمام سابقه",
+  "Current period": "بازهٔ جاری",
+  "Previous period": "بازهٔ پیشین",
+  "Compared with previous period": "در مقایسه با بازهٔ پیشین",
+  "Completion rate": "نرخ تکمیل",
+  "Focused time": "زمان تمرکز",
+  "Average focus per day": "میانگین تمرکز روزانه",
+  "Estimate accuracy": "دقت برآورد زمان",
+  "Focus goal days": "روزهای رسیدن به هدف تمرکز",
+  "Tasks completed": "وظایف تکمیل‌شده",
+  "Planned time": "زمان برنامه‌ریزی‌شده",
+  "Elapsed time": "زمان سپری‌شده",
+  "Actual focus": "تمرکز واقعی",
+  "Sessions completed": "جلسه‌های کامل‌شده",
+  "Days in range": "روزهای این بازه",
+  "Daily average": "میانگین روزانه",
+  "Most focused weekday": "روز هفته با بیشترین تمرکز",
+  "No activity in this period": "در این بازه فعالیتی ثبت نشده است",
+  "The comparison period has no records yet.": "برای بازهٔ مقایسه هنوز اطلاعاتی ثبت نشده است.",
+  "vs previous period": "در مقایسه با بازهٔ پیشین",
+  "Historical days": "روزهای گذشته",
+  "Editable history": "سابقهٔ قابل ویرایش",
+  "Historical tasks, elapsed time, focus sessions and journal entries remain editable. Select a day to review its records.": "وظایف، زمان سپری‌شده، جلسه‌های تمرکز و یادداشت‌های روزهای گذشته قابل ویرایش‌اند. برای مرور اطلاعات، یک روز را انتخاب کنید.",
+  "Select a day to review or edit its records.": "برای مرور یا ویرایش اطلاعات، یک روز را انتخاب کنید.",
+  "Historical day": "اطلاعات روز گذشته",
+  "User guide": "راهنمای استفاده",
+  "editable": "قابل ویرایش",
+  "estimate ·": "برآورد ·",
+  "or an alias ·": "یا نام کوتاه ·",
+  "priority ·": "اولویت ·",
+  "repeat": "تکرار",
+  "schedule ·": "زمان‌بندی ·",
+  "subtask ·": "گام فرعی ·",
+  "Day tasks": "وظایف روز",
+  "Day journal & capacity": "یادداشت و ظرفیت روز",
+  "Day note": "یادداشت روز",
+  "What went well? What would you change?": "چه چیزی خوب پیش رفت؟ چه چیزی را تغییر می‌دهید؟",
+  "Capacity (minutes)": "ظرفیت روز (دقیقه)",
+  "Save day details": "ذخیرهٔ اطلاعات روز",
+  "Focus records": "سوابق تمرکز",
+  "Sessions": "جلسه‌ها",
+  "No tasks recorded for this day.": "برای این روز وظیفه‌ای ثبت نشده است.",
+  "No sessions recorded for this day.": "برای این روز جلسه‌ای ثبت نشده است.",
+  "No historical days yet.": "هنوز روزی در سابقه ثبت نشده است.",
+  "Edit historical day": "ویرایش اطلاعات روز گذشته",
+  "Add task": "افزودن وظیفه",
+  "Edit session": "ویرایش جلسه",
+  "Delete session": "حذف جلسه",
+  "Focus session": "جلسهٔ تمرکز",
+  "Break session": "جلسهٔ استراحت",
+  "Actual duration": "مدت واقعی",
+  "Planned duration": "مدت برنامه‌ریزی‌شده",
+  "Completed normally": "جلسه به‌طور کامل پایان یافت",
+  "Started at": "زمان شروع",
+  "Ended at": "زمان پایان",
+  "Move to virtual day": "انتقال به روز مجازی",
+  "Linked task": "وظیفهٔ پیوندخورده",
+  "No linked task": "بدون وظیفهٔ پیوندخورده",
+  "This task is archived.": "این وظیفه بایگانی شده است.",
+  "Restore task": "بازیابی وظیفه",
+  "Calendar": "تقویم",
+  "Select a day": "انتخاب روز",
+  "Choose a calendar date": "انتخاب تاریخ",
+  "Back to current day": "بازگشت به روز جاری",
+  "Previous month": "ماه پیش",
+  "Next month": "ماه بعد",
+  "Go to date": "رفتن به تاریخ",
+  "Choose date": "انتخاب تاریخ",
+  "Select a date to navigate to its virtual day. This does not move tasks.": "برای رفتن به روز مجازی متناظر، تاریخ را انتخاب کنید. این کار وظایف را جابه‌جا نمی‌کند.",
+  "Dates before virtual day 1 are not available.": "تاریخ‌های پیش از روز مجازی اول در دسترس نیستند.",
+  "Enter a valid date for the selected calendar": "تاریخ معتبری مطابق تقویم انتخاب‌شده وارد کنید",
+  "The selected date is before virtual day 1.": "تاریخ انتخاب‌شده پیش از روز مجازی اول است.",
+  "Could not load this day": "بارگذاری اطلاعات این روز انجام نشد",
+  "Day details saved": "اطلاعات روز ذخیره شد",
+  "Session updated": "اطلاعات جلسه به‌روز شد",
+  "Session deleted": "جلسه حذف شد",
+  "Task added to this day": "وظیفه به این روز افزوده شد",
+  "Elapsed / gone time": "زمان سپری‌شده",
+  "Enter how much time has already passed. Adjustments are recorded in the task history.": "مدتی را که تاکنون گذشته وارد کنید. این تغییر در سابقهٔ وظیفه ثبت می‌شود.",
+  "Subtract five minutes": "کم‌کردن پنج دقیقه",
+  "Add five minutes": "افزودن پنج دقیقه",
+  "Task completed": "وظیفه انجام شده است",
+  "Historical completion status can be corrected at any time.": "وضعیت انجام وظیفه را هر زمان می‌توانید اصلاح کنید.",
+  "Times deferred": "دفعات تعویق",
+  "Historical data is editable": "اطلاعات گذشته قابل ویرایش است",
+  "Calendar date": "تاریخ تقویمی",
+  "Today": "امروز",
+  "Tomorrow": "فردا",
+  "Yesterday": "دیروز",
+  "Sat": "ش",
+  "Sun": "ی",
+  "Mon": "د",
+  "Tue": "س",
+  "Wed": "چ",
+  "Thu": "پ",
+  "Fri": "ج",
+  "Sunday": "یکشنبه",
+  "Monday": "دوشنبه",
+  "Tuesday": "سه‌شنبه",
+  "Wednesday": "چهارشنبه",
+  "Thursday": "پنجشنبه",
+  "Friday": "جمعه",
+  "Saturday": "شنبه",
+  "January": "ژانویه",
+  "February": "فوریه",
+  "March": "مارس",
+  "April": "آوریل",
+  "May": "مه",
+  "June": "ژوئن",
+  "July": "ژوئیه",
+  "August": "اوت",
+  "September": "سپتامبر",
+  "October": "اکتبر",
+  "November": "نوامبر",
+  "December": "دسامبر",
+  "فروردین": "فروردین",
+  "اردیبهشت": "اردیبهشت",
+  "خرداد": "خرداد",
+  "تیر": "تیر",
+  "مرداد": "مرداد",
+  "شهریور": "شهریور",
+  "مهر": "مهر",
+  "آبان": "آبان",
+  "آذر": "آذر",
+  "دی": "دی",
+  "بهمن": "بهمن",
+  "اسفند": "اسفند",
+  "January–December": "ژانویه تا دسامبر",
+  "Return to today": "بازگشت به امروز",
+  "No history yet.": "هنوز سابقه‌ای ثبت نشده است.",
+  "Select this date": "انتخاب این تاریخ",
+  "Virtual day": "روز مجازی",
+  "Date": "تاریخ",
+  "Workday": "روز کاری",
+  "minutes": "دقیقه",
+  "days": "روز",
+  "per day": "در روز",
+  "Focus goal": "هدف تمرکز",
+  "Goal attainment": "دستیابی به هدف",
+  "Average estimate error": "میانگین خطای برآورد",
+  "Estimate sample": "تعداد برآوردهای بررسی‌شده",
+  "Task estimate vs actual focus": "برآورد وظیفه در برابر تمرکز واقعی",
+  "Tasks done": "وظایف انجام‌شده",
+  "Open tasks": "وظایف باز",
+  "Focus sessions": "جلسه‌های تمرکز",
+  "Focus ratio": "نسبت تمرکز",
+  "Task estimate": "برآورد وظیفه",
+  "Session time": "زمان جلسه‌ها",
+  "Energy": "انرژی",
+  "Working days": "روزهای کاری",
+  "Calendar date anchor": "مبدأ تاریخ تقویم",
+  "The app stores its data in its local SQLite database; it does not require a cloud account.": "اطلاعات برنامه در پایگاه دادهٔ محلی SQLite همین دستگاه نگهداری می‌شود و به حساب ابری نیاز ندارد.",
+  "A task needs a title": "برای وظیفه عنوان بنویسید",
+  "Could not load insights": "بارگذاری تحلیل‌ها انجام نشد",
+  "Could not save that setting": "ذخیرهٔ این تنظیم انجام نشد",
+  "Could not save (check the duration format)": "ذخیره انجام نشد؛ قالب مدت‌زمان را بررسی کنید",
+  "No calendar date set": "تاریخ تقویمی تعیین نشده است",
+  "Set date for virtual day 1 in Settings → Language & calendar.": "تاریخ روز مجازی اول را از «تنظیمات ← زبان و تقویم» تعیین کنید.",
+  "Today · calendar date": "امروز · تاریخ تقویمی",
+  "No capacity configured.": "ظرفیت روزانه تنظیم نشده است.",
+  "Finish a couple of tasks and the analytics will start to fill in.": "با تکمیل چند وظیفه، گزارش‌های تحلیلی به‌تدریج شکل می‌گیرند.",
+  "Planned task time and actual focus-session time are different measures.": "زمان برنامه‌ریزی‌شدهٔ وظیفه با زمان واقعی جلسهٔ تمرکز دو معیار جداگانه‌اند.",
+  "No sessions yet.": "هنوز جلسه‌ای ثبت نشده است.",
+  "Show finished tasks": "نمایش وظایف انجام‌شده",
+  "Edit a task": "ویرایش وظیفه",
+  "All history": "تمام سابقه",
+  "Last 12 months": "۱۲ ماه گذشته",
+  "History date": "تاریخ سابقه",
+  "Current": "جاری",
+  "Previous": "پیشین",
+  "Details": "جزئیات",
+  "Completed on": "انجام‌شده در",
+  "Elapsed so far": "زمان سپری‌شده تاکنون",
+  "left of": "مانده از",
+  "planned": "برنامه‌ریزی‌شده",
+  "left": "باقی‌مانده",
+  "Deferred": "به تعویق افتاده",
+  "Completed normally": "به‌طور کامل پایان یافته",
+  "End time": "زمان پایان",
+  "New task": "وظیفهٔ تازه",
+  "Title": "عنوان",
+  "Name": "نام",
+  "Save": "ذخیره",
+  "Cancel": "لغو",
+  "Close": "بستن",
+  "Go": "رفتن",
+  "month": "ماه",
+  "week": "هفته",
+  "Year": "سال",
+  "Work patterns, clearly explained": "الگوهای کاری، روشن و کاربردی",
+});
+
+
+Object.assign(FA, {
+  "About": "دربارهٔ برنامه", "Accent": "رنگ تأکیدی", "Activity": "فعالیت‌ها", "Add to timeline": "افزودن به برنامهٔ زمانی",
+  "Adopt V0.1 data": "انتقال داده‌های نسخهٔ پیشین", "Alerts": "هشدارها", "All settings": "همهٔ تنظیمات", "Animations": "حرکت‌های تصویری",
+  "Ask before deleting or resetting": "پیش از حذف یا بازنشانی، تأیید گرفته شود", "Auto-complete at zero": "تکمیل خودکار در پایان زمان",
+  "Auto-pause after idle (seconds)": "مکث خودکار پس از بی‌کاری (ثانیه)", "Auto-start next phase": "شروع خودکار مرحلهٔ بعد", "Break": "استراحت",
+  "Bulk composer": "افزودن گروهی", "Cheat sheet": "راهنمای سریع", "Chime at phase end": "صدای اعلان در پایان مرحله",
+  "Choose task": "انتخاب وظیفه", "Clean up": "پاک‌سازی", "Colour scheme": "حالت رنگ", "Complete": "تکمیل",
+  "Completed time per day": "زمان تکمیل‌شده در هر روز", "Console": "کنسول", "Corner radius": "گردی گوشه‌ها", "Custom": "دلخواه",
+  "Cycles before long break": "تعداد چرخه تا استراحت بلند", "Daily capacity (minutes)": "ظرفیت روزانه (دقیقه)", "Daily focus goal (minutes)": "هدف تمرکز روزانه (دقیقه)",
+  "Data & backup": "داده‌ها و نسخهٔ پشتیبان", "Day rollover hour": "ساعت آغاز روز کاری", "Default task length (minutes)": "مدت پیش‌فرض وظیفه (دقیقه)",
+  "Delete all tasks": "حذف همهٔ وظایف", "Drag the handle": "دستگیره را بکشید", "Duration display": "نمایش مدت‌زمان",
+  "Edit task": "ویرایش وظیفه", "Estimated pomodoros": "پومودوروهای برآوردشده", "Export CSV": "خروجی CSV",
+  "Export backup": "دریافت نسخهٔ پشتیبان", "Factory reset": "بازنشانی کامل", "Fine tuning": "تنظیم دقیق",
+  "Finish day": "پایان روز", "Focus engine": "بخش تمرکز", "Default design": "طرح پیش‌فرض", "Greeting": "پیام خوشامد",
+  "Group": "گروه‌بندی", "Hide secondary details on task rows": "جزئیات فرعی در ردیف وظیفه پنهان شوند", "History": "تاریخچه",
+  "Import backup": "بازیابی نسخهٔ پشتیبان", "Insert day": "درج یک روز", "Insert example": "درج نمونه", "Insights": "تحلیل‌ها",
+  "Keep completed work visible in the list": "وظایف تکمیل‌شده در فهرست باقی بمانند", "Keys": "میان‌برها", "Level": "سطح",
+  "Log & stop": "ثبت و پایان", "Longest stretch": "طولانی‌ترین جلسه", "Move to end": "انتقال به انتهای روز",
+  "New rule": "قاعدهٔ تازه", "No task selected": "وظیفه‌ای انتخاب نشده است", "No tasks for this day": "برای این روز وظیفه‌ای ندارید",
+  "Notes": "یادداشت", "Nothing scheduled": "کاری زمان‌بندی نشده است", "Paste lines": "چسباندن فهرست",
+  "Paste many lines": "افزودن چندین خط", "Paste or type many lines": "چند وظیفه را بنویسید یا جای‌گذاری کنید", "Pick a task from the queue to begin.": "برای شروع، یک وظیفه از صف انتخاب کنید.",
+  "Polled every 10 seconds; while the service reports": "هر ۱۰ ثانیه بررسی می‌شود؛ تا وقتی سرویس وضعیت", "Preferences": "ترجیحات",
+  "Preview task notes inside the list": "یادداشت هر وظیفه در همان فهرست دیده شود", "Pull down": "کشیدن صفحه به پایین",
+  "Quick-add cheat sheet": "راهنمای افزودن سریع", "Range": "بازه", "Ranked queue": "صف اولویت‌بندی‌شده",
+  "Remind me": "یادآوری در", "Reminders due": "یادآورها", "Reopen day": "بازگشایی روز", "Repeat…": "تکرار…",
+  "Requires permission from your browser": "به اجازهٔ مرورگر نیاز دارد", "Reusable sets": "برنامه‌های آماده", "Roll straight from focus into a break": "پس از تمرکز، استراحت به‌صورت خودکار آغاز شود",
+  "Safety": "ایمنی و پشتیبان‌گیری", "Save today as template": "ذخیرهٔ امروز به‌عنوان الگو", "Schedule for": "زمان‌بندی برای",
+  "Scheduled at": "زمان‌بندی برای", "Session log": "گزارش جلسه‌ها", "Sessions logged": "جلسه‌های ثبت‌شده", "Set duration for #tag": "تنظیم مدت‌زمان برچسب",
+  "Short break (min)": "استراحت کوتاه (دقیقه)", "Sort": "مرتب‌سازی", "Start focus": "شروع تمرکز", "Start focus session": "شروع جلسهٔ تمرکز",
+  "Streaks & milestones": "تداوم و دستاوردها", "Stronger borders and text": "مرزها و متن خواناتر", "Subtasks": "گام‌های فرعی",
+  "Swipe left": "کشیدن به چپ", "Swipe right": "کشیدن به راست", "Sync": "همگام‌سازی", "Table": "جدول",
+  "Task progress": "پیشرفت وظیفه", "Theme studio": "استودیوی ظاهر", "Time machine": "مرور تغییرها", "Timeline": "برنامهٔ زمانی",
+  "Times before this hour count as the previous day.": "زمان‌های پیش از این ساعت به روز قبل تعلق می‌گیرند.", "Today at a glance": "نمای کلی امروز",
+  "Today focused": "تمرکز امروز", "Touch gestures": "حرکت‌های لمسی", "Trim history": "پاک‌سازی تاریخچه",
+  "Undo depth": "تعداد مراحل بازگشت", "Use a template": "استفاده از الگو", "Virtual-day heatmap": "نقشهٔ فعالیت روزانه",
+  "Vocabulary": "دسته‌بندی‌ها", "Warn when more than this many tasks are open in one day.": "اگر تعداد وظایف باز روز از این مقدار بیشتر شود، هشدار داده می‌شود.",
+  "Week starts on": "آغاز هفته", "Where the time goes": "زمان صرف چه کاری می‌شود؟", "Work-in-progress limit": "حد وظایف هم‌زمان",
+  "Workday ends": "پایان روز کاری", "Workday starts": "شروع روز کاری", "Your plan": "برنامهٔ شما", "weekly rhythm": "الگوی هفتگی",
+  "+5m": "+۵ دقیقه", "−5m": "−۵ دقیقه", "0 ready": "۰ آماده", "15 / 3": "۱۵ / ۳", "25 / 5": "۲۵ / ۵", "50 / 10": "۵۰ / ۱۰",
+  "0 / 4h": "۰ / ۴ ساعت", "0m": "۰ دقیقه", "0%": "۰٪", "50%": "۵۰٪", "100%": "۱۰۰٪",
+  "A task needs a title": "برای وظیفه عنوان بنویسید", "Break": "استراحت", "Current streak": "تداوم فعلی",
+  "Done": "انجام شد", "Done today": "انجام‌شدهٔ امروز", "No open tasks": "وظیفهٔ بازی وجود ندارد", "Nothing to undo": "تغییری برای بازگردانی وجود ندارد",
+  "Nothing to redo": "تغییری برای انجام دوباره وجود ندارد", "Server URL saved": "نشانی سرویس ذخیره شد", "Saved": "ذخیره شد",
+  "No tags yet.": "هنوز برچسبی ندارید.", "No templates yet.": "هنوز الگویی ندارید.", "No recurring tasks yet.": "هنوز وظیفهٔ تکرارشونده‌ای ندارید.",
+  "No sessions yet.": "هنوز جلسه‌ای ثبت نشده است.", "No steps yet.": "هنوز گامی ثبت نشده است.", "No day notes yet. Finish a day or write a line above.": "هنوز یادداشتی ندارید؛ روز را پایان دهید یا یادداشتی بنویسید.",
+  "No activity recorded yet.": "هنوز فعالیتی ثبت نشده است.", "No tasks yet": "هنوز وظیفه‌ای ثبت نشده است", "Nothing queued. Add a task and it will appear here.": "صف خالی است؛ با افزودن وظیفه، آن را اینجا می‌بینید.",
+  "Nothing to plot yet.": "برای رسم نمودار داده‌ای وجود ندارد.", "Tag some tasks and their weight will appear here.": "به چند وظیفه برچسب بزنید تا سهم هر دسته نمایش داده شود.",
+  "Ellapsed so far:": "زمان سپری‌شده تاکنون:", "Elapsed so far:": "زمان سپری‌شده تاکنون:", "Changing the estimate preserves elapsed progress.": "با تغییر برآورد، زمان سپری‌شده حفظ می‌شود.",
+  "Enter a valid elapsed duration": "مدت سپری‌شده را به‌درستی وارد کنید", "Enter a valid duration": "مدت‌زمان معتبری وارد کنید",
+  "Could not add task": "افزودن وظیفه انجام نشد", "Could not update session": "به‌روزرسانی جلسه انجام نشد", "Could not delete session": "حذف جلسه انجام نشد",
+  "Could not restore task": "بازیابی وظیفه انجام نشد", "Could not save the day details": "ذخیرهٔ اطلاعات روز انجام نشد", "This session will be removed from historical analytics.": "این جلسه از تحلیل روزهای گذشته حذف می‌شود.",
+  "Archived": "بایگانی‌شده", "Open": "باز", "of planned time": "از زمان برنامه‌ریزی‌شده", "complete": "تکمیل‌شده",
+  "best streak": "بهترین تداوم", "perfect days": "روز کامل", "Focused time": "زمان تمرکز", "per day": "در روز",
+  "No estimate data in this period": "در این بازه برآوردی برای مقایسه وجود ندارد", "Estimate sample": "برآوردهای بررسی‌شده",
+  "Focus goal": "هدف تمرکز", "Task estimate": "برآورد وظیفه", "Planned": "برنامه‌ریزی‌شده", "remaining": "باقی‌مانده", "done": "انجام‌شده",
+  "Actual duration": "مدت واقعی", "Planned duration": "مدت برنامه‌ریزی‌شده", "Completed normally": "جلسه به‌طور کامل پایان یافت",
+  "Session type": "نوع جلسه", "Started at": "زمان شروع", "Ended at": "زمان پایان", "Move to virtual day": "انتقال به روز مجازی", "Linked task": "وظیفهٔ پیوندخورده",
+  "No linked task": "بدون وظیفهٔ پیوندخورده", "Enter a date as YYYY/MM/DD or YYYY-MM-DD": "تاریخ را به‌صورت سال/ماه/روز وارد کنید",
+  "Open historical day": "بازکردن اطلاعات روز گذشته", "Previous period": "بازهٔ پیشین", "Current period": "بازهٔ جاری",
+  "Reporting period": "بازهٔ گزارش", "Estimate accuracy": "دقت برآورد زمان", "Sessions completed": "جلسه‌های کامل‌شده",
+  "Average focus per day": "میانگین تمرکز روزانه", "Focus goal days": "روزهای رسیدن به هدف تمرکز", "Completion rate": "نرخ تکمیل",
+  "Tasks completed": "وظایف تکمیل‌شده", "Days in range": "روزهای این بازه", "Actual focus": "تمرکز واقعی", "Completed tasks": "وظایف تکمیل‌شده",
+  "No activity in this period": "در این بازه فعالیتی ثبت نشده است", "Focus by weekday": "تمرکز بر اساس روز هفته", "hour of day": "ساعت روز",
+  "Work patterns, clearly explained": "الگوهای کاری، روشن و کاربردی", "Calendar": "تقویم", "Go to date": "رفتن به تاریخ",
+  "Select a day": "انتخاب روز", "Previous month": "ماه پیش", "Next month": "ماه بعد", "Back to current day": "بازگشت به روز جاری",
+  "Quick-add examples": "نمونه‌های افزودن سریع", "Today": "امروز", "Tomorrow": "فردا", "Yesterday": "دیروز",
+  "Enter a valid date for the selected calendar": "تاریخ معتبری مطابق تقویم انتخاب‌شده وارد کنید", "The selected date is before virtual day 1.": "تاریخ انتخاب‌شده پیش از روز مجازی اول است.",
+  "No historical days yet.": "هنوز روزی در سابقه ثبت نشده است.", "Day details saved": "اطلاعات روز ذخیره شد", "Task added to this day": "وظیفه به این روز افزوده شد",
+  "Session updated": "اطلاعات جلسه به‌روز شد", "Session deleted": "جلسه حذف شد", "No tasks recorded for this day.": "برای این روز وظیفه‌ای ثبت نشده است.",
+  "No sessions recorded for this day.": "برای این روز جلسه‌ای ثبت نشده است.", "Virtual day": "روز مجازی", "Calendar date": "تاریخ تقویمی",
+  "Noto Naskh Arabic": "قلم نسخ نوتو", "Estedad": "استعداد", "Vazirmatn": "وزیرمتن", "Sahel": "ساحل",
+});
+
+
+Object.assign(FA, {
+  "Analytics controls": "کنترل‌های تحلیل",
+  "Close bulk composer": "بستن افزودن گروهی",
+  "Completed tasks per virtual day": "وظایف تکمیل‌شده در هر روز مجازی",
+  "Completed, remaining and over-capacity time": "زمان انجام‌شده، باقی‌مانده و بیش از ظرفیت",
+  "Current virtual day": "روز مجازی جاری",
+  "Focus timer": "زمان‌سنج تمرکز",
+  "More actions": "گزینه‌های بیشتر",
+  "Next day": "روز بعد",
+  "Open command palette": "بازکردن جست‌وجو و فرمان‌ها",
+  "Open settings": "بازکردن تنظیمات",
+  "Open theme studio": "بازکردن استودیوی ظاهر",
+  "Pomodoro cycle": "چرخهٔ پومودورو",
+  "Previous day": "روز پیشین",
+  "Primary": "اصلی",
+  "Quick add": "افزودن سریع",
+  "Redo": "انجام دوباره",
+  "Sections": "بخش‌ها",
+  "Start or pause the timer": "شروع یا مکث زمان‌سنج",
+  "Theme": "پوسته",
+  "Time remaining": "زمان باقی‌مانده",
+  "Toggle colour scheme": "تغییر حالت رنگ",
+  "Toggle focus mode": "تغییر حالت تمرکز",
+  "Undo": "بازگردانی",
+  "1405/07/15": "۱۴۰۵/۰۷/۱۵",
+  "1h30m, 90, 2p": "۱h۳۰m، ۹۰، ۲p",
+  "25m, 1h 10m": "۲۵m، ۱h ۱۰m",
+  "Add a step…": "افزودن گام…",
+  "Context, links, next step…": "زمینه، پیوندها، گام بعدی…",
+  "Deep work #w 90m @09:30 !! +outline  —  press Enter": "کار عمیق #w ۹۰ دقیقه @09:30 !! +طرح‌کلی — برای افزودن Enter را بزنید",
+  "Make time visible.": "زمان را به چشم بیاورید.",
+  "One line about this day…": "یادداشتی کوتاه دربارهٔ این روز…",
+  "One task per line. Indent or start with \"-\" to attach a subtask.\nDeep work #w 90m @09:30 !!\n  outline the report\n  write section 1\nLaundry #h 40m *weekly\nGym #he 1h !": "هر وظیفه را در یک خط بنویسید. برای افزودن گام فرعی، خط را تورفته کنید یا با «-» آغاز کنید.\nکار عمیق #w ۹۰ دقیقه @09:30 !!\n  طرح کلی گزارش\n  نوشتن بخش اول\nلباس‌شویی #h ۴۰ دقیقه *weekly\nباشگاه #he ۱ ساعت !",
+  "Search tasks, tags, themes or run a command…": "جست‌وجوی وظیفه و برچسب، انتخاب پوسته یا اجرای فرمان…",
+  "http://127.0.0.1:2230": "http://127.0.0.1:2230",
+  "Archive finished tasks": "بایگانی وظایف انجام‌شده",
+  "Command palette (Ctrl+K)": "جست‌وجو و فرمان‌ها (Ctrl+K)",
+  "Cycle sort order": "تغییر شیوهٔ مرتب‌سازی",
+  "Focus mode (F)": "حالت تمرکز (F)",
+  "Next day (K)": "روز بعد (K)",
+  "Previous day (J)": "روز پیشین (J)",
+  "Progress across the whole timeline": "پیشرفت در کل برنامهٔ زمانی",
+  "Redo (Ctrl+Shift+Z)": "انجام دوباره (Ctrl+Shift+Z)",
+  "Settings (Ctrl+,)": "تنظیمات (Ctrl+,)",
+  "Shortcuts (?)": "میان‌برها (?)",
+  "Show or hide finished tasks": "نمایش یا پنهان‌کردن وظایف انجام‌شده",
+  "Show the ranked queue": "نمایش صف اولویت‌بندی‌شده",
+  "Theme studio (T)": "استودیوی ظاهر (T)",
+  "Toggle light / dark (L)": "تغییر حالت روشن و تیره (L)",
+  "Undo (Ctrl+Z)": "بازگردانی (Ctrl+Z)",
+  "English": "English",
+  "—": "—",
+  "Start focus": "شروع تمرکز",
+  "Every day": "هر روز",
+  "Weekdays": "روزهای کاری",
+  "Weekends": "آخر هفته",
+  "Monthly": "ماهانه",
+  "No repeat": "بدون تکرار",
+  "Choose a tag": "انتخاب برچسب",
+  "Current day": "روز جاری",
+  "Use system default": "استفاده از پیش‌فرض دستگاه",
+  "Automatic": "خودکار",
+  "Less": "کمتر",
+  "More": "بیشتر",
+  "Vazirmatn": "وزیرمتن",
+  "Estedad": "استعداد",
+  "Noto Naskh Arabic": "قلم نسخ نوتو",
+  "Sahel": "ساحل",
+});
+
+
+Object.assign(FA, {
+  "All clear for today": "کارهای امروز به پایان رسیده‌اند",
+  "Nothing open": "وظیفهٔ بازی باقی نمانده است",
+  "Add a task, apply a template, or finish the day to move the timeline forward.": "وظیفه‌ای بیفزایید، الگویی اجرا کنید یا با پایان روز به روز بعد بروید.",
+  "nothing queued": "صف خالی است",
+  "On a break": "در حال استراحت",
+  "Focusing now": "در حال تمرکز",
+  "Up next": "در ادامه",
+  "break running": "استراحت در حال اجراست",
+  "counting down": "زمان‌سنج در حال شمارش است",
+  "remaining": "باقی‌مانده",
+  "focus": "تمرکز",
+  "break": "استراحت",
+  "set": "چرخه",
+  "Pause": "مکث",
+  "Resume": "ادامه",
+  "Back to focus": "بازگشت به تمرکز",
+  "Focus block": "بازهٔ تمرکز",
+  "short break": "استراحت کوتاه",
+  "long break": "استراحت بلند",
+  "running": "در حال اجرا",
+  "ready": "آماده",
+  "paused": "متوقف‌شده",
+  "paused (idle)": "توقف خودکار هنگام بی‌کاری",
+  "in queue": "در صف",
+  "steps": "گام",
+  "scheduled": "زمان‌بندی‌شده",
+  "pinned": "سنجاق‌شده",
+  "deferred": "به‌تعویق‌افتاده",
+  "open": "باز",
+  "task": "وظیفه",
+  "tasks": "وظیفه",
+  "left of": "مانده از",
+  "left": "باقی‌مانده",
+  "of capacity": "از ظرفیت روزانه",
+  "planned against": "برنامه‌ریزی‌شده در برابر",
+  "no capacity set": "ظرفیت روزانه تنظیم نشده است",
+  "Set a daily capacity in Settings → Time to get overload warnings.": "برای دریافت هشدار بار کاری، ظرفیت روزانه را در «تنظیمات ← زمان و روز» مشخص کنید.",
+  "Room to spare.": "ظرفیت کافی باقی مانده است.",
+  "The day is full.": "ظرفیت روز تکمیل شده است.",
+  "Slightly over capacity — consider moving something.": "کمی بیش از ظرفیت است؛ انتقال بخشی از کارها را در نظر بگیرید.",
+  "Way over capacity. Split the day or defer tasks.": "بسیار بیش از ظرفیت است؛ کارها را تقسیم کنید یا به تعویق بیندازید.",
+  "Focus session": "جلسهٔ تمرکز",
+  "No task selected": "وظیفه‌ای انتخاب نشده است",
+  "Pick something from the ranked queue to begin.": "برای شروع، موردی را از صف اولویت‌بندی‌شده انتخاب کنید.",
+  "Focus by weekday": "تمرکز بر اساس روز هفته",
+  "weekly rhythm": "الگوی هفتگی",
+  "not configured": "تنظیم نشده",
+  "Countdowns follow your local timer rules.": "زمان‌سنج‌ها از تنظیمات محلی شما پیروی می‌کنند.",
+  "External service says: working": "سرویس بیرونی: در حال کار",
+  "External service says: free time — countdown paused": "سرویس بیرونی: زمان آزاد؛ شمارش معکوس متوقف شد",
+  "unreachable": "دسترسی برقرار نشد",
+  "Could not reach the configured service.": "ارتباط با سرویس تنظیم‌شده برقرار نشد.",
+  "Start focus": "شروع تمرکز",
+  "task": "وظیفه",
+  "added": "افزوده شد",
+  "lines skipped": "خط نادیده گرفته شد",
+  "Skipped:": "نادیده گرفته‌شده:",
+  "Skipped": "نادیده گرفته شد",
+  "lines": "خط",
+  "invalid line": "خط نامعتبر",
+  "Type or paste at least one line.": "دست‌کم یک خط بنویسید یا جای‌گذاری کنید.",
+  "No valid task lines found.": "خط معتبری برای افزودن وظیفه پیدا نشد.",
+  "Nothing was added — check the format": "چیزی افزوده نشد؛ قالب نوشته را بررسی کنید.",
+  "Could not add the tasks": "افزودن وظایف انجام نشد.",
+  "Nothing to add yet": "هنوز موردی برای افزودن نیست.",
+  "layout:": "چیدمان:",
+  "planned": "برنامه‌ریزی‌شده",
+  "hide done": "پنهان‌کردن انجام‌شده‌ها",
+  "show done": "نمایش انجام‌شده‌ها",
+  "manual": "دستی",
+  "priority": "اولویت",
+  "shortest": "کوتاه‌ترین",
+  "longest": "بلندترین",
+  "az": "الف تا ی",
+  "newest": "جدیدترین",
+  "paused": "مکث‌شده",
+  "Focus goal": "هدف تمرکز",
+  "all clear": "همهٔ کارها انجام شده‌اند",
+  "Focus more": "تمرکز بیشتر",
+  "How does this work?": "این بخش چگونه کار می‌کند؟",
+  "Focus time: ": "زمان تمرکز: ",
+  "Completion: ": "میزان تکمیل: ",
+  "Open tasks: ": "وظایف باز: ",
+  "Streak: ": "تداوم: ",
+  "task(s)": "وظیفه",
+  "No estimate data in this period": "در این بازه برآوردی برای مقایسه وجود ندارد",
+});
+
+
+Object.assign(FA, {
+  "Wanderer": "رهرو",
+  "Apprentice": "کارآموز",
+  "Steady Hand": "دست استوار",
+  "Focused": "متمرکز",
+  "Deep Worker": "ژرف‌کار",
+  "Time Smith": "زمان‌پرداز",
+  "Momentum": "شتاب",
+  "Marathoner": "ماراتن‌رو",
+  "Architect": "معمار زمان",
+  "Time Lord": "سالار زمان",
+  "xp to the next level": "امتیاز تا سطح بعد",
+  "Earn xp for finishing tasks and for every two minutes spent in a focus session.": "با تکمیل وظایف و هر دو دقیقه تمرکز، امتیاز تجربه بگیرید.",
+  "current streak": "تداوم فعلی",
+  "best streak": "بهترین تداوم",
+  "perfect days": "روز کامل",
+  "active days": "روز فعال",
+  "created": "ایجاد شد",
+  "completed": "تکمیل شد",
+  "reopened": "دوباره باز شد",
+  "deferred": "به تعویق افتاد",
+  "deleted": "حذف شد",
+  "edited": "ویرایش شد",
+  "moved": "جابه‌جا شد",
+  "reordered": "مرتب شد",
+  "split": "تقسیم شد",
+  "duplicated": "تکثیر شد",
+  "finished a day": "روز به پایان رسید",
+  "reopened a day": "روز دوباره باز شد",
+  "started focus": "تمرکز آغاز شد",
+  "focus completed": "جلسهٔ تمرکز کامل شد",
+  "focus stopped early": "جلسهٔ تمرکز زودتر متوقف شد",
+  "started a break": "استراحت آغاز شد",
+  "break finished": "استراحت پایان یافت",
+  "added a step": "گام افزوده شد",
+  "ticked a step": "گام انجام شد",
+  "changed settings": "تنظیمات تغییر کرد",
+  "created a tag": "برچسب ساخته شد",
+  "added an alias": "نام کوتاه افزوده شد",
+  "applied a template": "الگو اجرا شد",
+  "materialised repeats": "وظایف تکرارشونده ساخته شدند",
+  "imported data": "اطلاعات وارد شد",
+  "undid a change": "تغییری بازگردانده شد",
+  "redid a change": "تغییری دوباره انجام شد",
+  "cleaned up": "پاک‌سازی انجام شد",
+  "focused": "زمان تمرکز",
+  "abandoned": "متوقف‌شده",
+  "due now": "موعد آن اکنون است",
+  "now": "اکنون",
+  "carried over": "منتقل‌شده به روز بعد",
+  "Type or paste at least one line.": "دست‌کم یک خط بنویسید یا جای‌گذاری کنید.",
+  "A task needs a title": "برای وظیفه عنوان بنویسید",
+  "Calendar start date is not valid": "تاریخ آغاز تقویم معتبر نیست",
+  "Time zone must be a valid IANA name, such as Asia/Tehran": "منطقهٔ زمانی باید نام معتبر IANA باشد؛ مانند Asia/Tehran",
+  "No templates yet — save a day to create one.": "هنوز الگویی ندارید؛ برای ساخت الگو، یک روز را ذخیره کنید.",
+  "No checkpoints yet — every edit creates one.": "هنوز نقطهٔ بازگشتی ندارید؛ هر ویرایش یک نقطهٔ تازه می‌سازد.",
+  "Nothing open — enjoy the space.": "وظیفه‌ای باقی نمانده است؛ از این فرصت استفاده کنید.",
+  "Restore this checkpoint": "بازگردانی به این نقطه",
+  "default": "پیش‌فرض",
+  "used": "استفاده‌شده",
+  "starts": "شروع می‌شود",
+  "task": "وظیفه",
+  "tasks": "وظایف",
+  "lines skipped": "خط نادیده گرفته شد",
+  "No valid task lines found.": "خط معتبری برای افزودن وظیفه پیدا نشد.",
+  "Nothing was added — check the format": "چیزی افزوده نشد؛ قالب نوشته را بررسی کنید.",
+  "Could not add the tasks": "افزودن وظایف انجام نشد.",
+  "No data yet": "هنوز داده‌ای ثبت نشده است",
+  "Finish a couple of tasks and the analytics will start to fill in.": "با تکمیل چند وظیفه، گزارش‌های تحلیلی به‌تدریج شکل می‌گیرند.",
+  "Focus more": "تمرکز بیشتر",
+  "How does this work?": "این بخش چگونه کار می‌کند؟",
+  "Lumen": "لومن",
+  "Midnight": "نیمه‌شب",
+  "Terminal": "ترمینال",
+  "Slate": "خاکستری‌سبز",
+  "Zen Paper": "کاغذ ذن",
+  "Arcade": "آرکید",
+  "Harbor": "هاربر",
+  "board": "برد",
+  "console": "کنسول",
+  "table": "جدول",
+  "stream": "جریان",
+  "tiles": "کاشی‌ها",
+  "Card board": "برد کارتی",
+  "Mission control": "اتاق فرمان",
+  "Keyboard first": "اولویت با صفحه‌کلید",
+  "Calm single column": "ستون آرام و خلوت",
+  "Playful XP": "امتیازدهی بازی‌وار",
+  "Board-based planning with soft cards and generous air.": "برنامه‌ریزی روی بردی با کارت‌های نرم و فضای باز.",
+  "A dark two-pane cockpit: rail, list and live telemetry.": "محیطی تیره و دو‌بخشی با نوار کناری، فهرست و داده‌های زنده.",
+  "Monospaced, dense, ASCII-native. Built for the keyboard.": "فشرده و تک‌فاصله؛ ساخته‌شده برای کار با صفحه‌کلید.",
+  "Editorial single column, warm paper, nothing shouting.": "ستونی تحریریه‌ای با رنگ کاغذ گرم و فضایی آرام.",
+  "Gamified tiles, glowing rings and streak rewards.": "کاشی‌های بازی‌وار، حلقه‌های درخشان و پاداش تداوم.",
+});
+
+// Routine runner and selectable design system. Wording is intentionally practical:
+// روال = routine, گام = step, and زمان‌سنج = countdown/timer.
+Object.assign(FA, {
+  "Routines": "روال‌ها",
+  "Routine": "روال",
+  "Guided routines": "روال‌های گام‌به‌گام",
+  "Make a little sequence. Follow it one step at a time.": "چند گام کوتاه بچینید و یکی‌یکی پیش بروید.",
+  "Save repeatable routines, set a duration for each step, then let the runner keep your place.": "روال‌های تکرارشونده را ذخیره کنید و برای هر گام زمان بگذارید؛ اجراکننده جای شما را نگه می‌دارد.",
+  "Try a starter": "شروع با نمونه",
+  "New routine": "روال تازه",
+  "Your library": "کتابخانهٔ شما",
+  "Saved routines": "روال‌های ذخیره‌شده",
+  "Recent practice": "اجراهای اخیر",
+  "Run history": "سابقهٔ اجرا",
+  "0 routines": "۰ روال",
+  "Routine builder": "ساخت روال",
+  "Ordered steps": "گام‌های مرتب‌شده",
+  "Each step needs a title and a duration. Use the arrows to change its order.": "برای هر گام، عنوان و مدت تعیین کنید. با پیکان‌ها ترتیب گام‌ها را تغییر دهید.",
+  "Add step": "افزودن گام",
+  "Step name": "عنوان گام",
+  "Optional step note": "یادداشت اختیاری گام",
+  "Step": "گام",
+  "name": "عنوان",
+  "minutes": "دقیقه",
+  "min": "دقیقه",
+  "emoji": "ایموجی",
+  "optional note": "یادداشت اختیاری",
+  "Move step up": "بردن گام به بالا",
+  "Move step down": "بردن گام به پایین",
+  "Remove step": "حذف گام",
+  "Edit routine": "ویرایش روال",
+  "Save changes": "ذخیرهٔ تغییرات",
+  "Save routine": "ذخیرهٔ روال",
+  "Give this routine a name.": "برای این روال نامی بنویسید.",
+  "Add a name to every step before saving.": "پیش از ذخیره، برای همهٔ گام‌ها عنوان بنویسید.",
+  "Step durations must be between 1 and 240 minutes.": "مدت هر گام باید بین ۱ تا ۲۴۰ دقیقه باشد.",
+  "Routine updated": "روال به‌روز شد",
+  "Routine saved": "روال ذخیره شد",
+  "Could not save the routine.": "ذخیرهٔ روال انجام نشد.",
+  "No routines yet": "هنوز رَوالی ندارید",
+  "Create your own sequence, or add a starter routine and make it yours.": "روال خودتان را بسازید یا یک نمونه اضافه کنید و مطابق نیازتان تغییر دهید.",
+  "Add a starter": "افزودن نمونه",
+  "Starts with": "گام نخست",
+  "Start": "شروع",
+  "Open runner": "بازکردن اجراکننده",
+  "Edit": "ویرایش",
+  "Archive routine": "بایگانی روال",
+  "Archive this routine?": "این روال بایگانی شود؟",
+  "It will leave your active routine list. Completed run history will remain.": "روال از فهرست فعال خارج می‌شود؛ سابقهٔ اجراهای آن باقی می‌ماند.",
+  "Routine archived": "روال بایگانی شد",
+  "Could not archive the routine.": "بایگانی روال انجام نشد.",
+  "Guided runner": "اجراکنندهٔ روال",
+  "In progress": "در حال اجرا",
+  "Paused": "مکث‌شده",
+  "Stop routine": "توقف روال",
+  "remaining in this routine": "تا پایان روال باقی‌مانده",
+  "Routine progress": "پیشرفت روال",
+  "completed": "تکمیل‌شده",
+  "skipped": "ردشده",
+  "steps": "گام",
+  "step": "گام",
+  "Routine steps": "گام‌های روال",
+  "Current step": "گام جاری",
+  "No current step": "گام جاری نداریم",
+  "time left in this step": "زمان باقی‌ماندهٔ این گام",
+  "Current step progress": "پیشرفت گام جاری",
+  "Pause": "مکث",
+  "Resume": "ادامه",
+  "Complete step": "تکمیل گام",
+  "Skip step": "ردکردن گام",
+  "Coming next": "گام بعد",
+  "That is the final step": "این گام پایانی است",
+  "Ready when you are": "هر وقت آماده‌اید",
+  "Start a routine to open the guided runner": "برای بازکردن اجراکننده، روالی را شروع کنید",
+  "Your current step, countdown, progress, and next step will stay together here.": "گام جاری، زمان‌سنج، میزان پیشرفت و گام بعدی را یک‌جا ببینید.",
+  "Choose a routine below": "یکی از روال‌های زیر را انتخاب کنید",
+  "Stop the active routine before starting another": "پیش از شروع روال دیگری، روال جاری را متوقف کنید",
+  "Routine started": "روال شروع شد",
+  "Could not start the routine.": "شروع روال انجام نشد.",
+  "Stop this routine?": "این روال متوقف شود؟",
+  "Your progress will be saved in run history, and you can start again later.": "پیشرفت در سابقه ذخیره می‌شود و بعداً می‌توانید روال را دوباره اجرا کنید.",
+  "Routine is no longer active": "روال دیگر فعال نیست",
+  "Could not update the routine.": "به‌روزرسانی روال انجام نشد.",
+  "Step timer finished. Complete or skip it when you are ready.": "زمان این گام تمام شد. هر وقت آماده‌اید آن را تکمیل یا رد کنید.",
+  "Completed and stopped runs will appear here.": "اجراهای تکمیل‌شده و متوقف‌شده در اینجا نمایش داده می‌شوند.",
+  "This day is clear": "برای امروز کاری باقی نمانده است",
+  "Add a task when you are ready for the next one.": "هر وقت آماده‌اید، وظیفهٔ بعدی را اضافه کنید.",
+  "Your next focus": "تمرکز بعدی شما",
+  "Focus on this": "شروع تمرکز",
+  "Keep nearby": "در دسترس",
+  "Up next": "در صف بعدی",
+  "Nothing else is queued for today.": "برای امروز کار دیگری در صف نیست.",
+  "Your next task will appear here.": "وظیفهٔ بعدی شما اینجا نمایش داده می‌شود.",
+  "Seven-day task map": "نمای وظایف هفت‌روزه",
+  "The next seven days": "هفت روز آینده",
+  "Tap a day to open it": "برای بازکردن یک روز، آن را لمس کنید",
+  "No tasks planned": "وظیفه‌ای برنامه‌ریزی نشده است",
+  "Open this day": "بازکردن این روز",
+  "more": "مورد دیگر",
+  "There are no tasks in this view yet.": "در این نما هنوز وظیفه‌ای نیست.",
+  "One step at a time": "یک گام در هر نوبت",
+  "Your task flow": "مسیر وظایف شما",
+  "day": "روز",
+  "days": "روز",
+  "Starter routine is ready. You can edit every step.": "روال نمونه آماده است؛ همهٔ گام‌ها را می‌توانید ویرایش کنید.",
+  "Morning reset": "آغاز آرام روز",
+  "A short, steady start for the day": "شروعی کوتاه و آرام برای روز",
+  "Make the bed": "مرتب‌کردن تخت",
+  "Drink a glass of water": "نوشیدن یک لیوان آب",
+  "Gentle stretch": "کشش آرام بدن",
+  "Choose the first task": "انتخاب نخستین وظیفه",
+  "Start a routine": "شروع روال",
+  "Choose a clear next step.": "گام بعدی را روشن انتخاب کنید.",
+  "Give this step a name": "برای این گام عنوانی بنویسید",
+  "Five colour palettes": "پنج پالت رنگی",
+  "Palette": "پالت رنگی",
+  "Quiet, focused palette": "پالت آرام و متمرکز",
+  "Calm deep teal": "سبزآبیِ آرام",
+  "Balanced charcoal tones with comfortable contrast for long sessions.": "طیف‌های متعادل زغالی با کنتراستی مناسب برای استفادهٔ طولانی.",
+  "A measured teal palette with clear surfaces and calm contrast.": "پالت سبزآبیِ متعادل با سطوح روشن و کنتراستی آرام.",
+  "Choose a palette and light or dark scheme. The theme changes appearance only; your selected design stays independent.": "پالت و حالت روشن یا تیره را انتخاب کنید. پوسته فقط ظاهر رنگی را تغییر می‌دهد و از طرح انتخابی شما مستقل است.",
+  "Choose a design": "انتخاب طرح", 
+  "Eight practical designs change task hierarchy, spacing and navigation—not only color. All eight adapt to phone screens.": "هشت طرح کاربردی، چیدمان و اولویت اطلاعات را تغییر می‌دهند؛ تفاوت فقط در رنگ نیست. هر هشت طرح برای تلفن همراه سازگارند.",
+  "Agenda": "برنامهٔ روزانه",
+  "agenda": "برنامهٔ روزانه",
+  "Board": "برد",
+  "Week map": "نمای هفتگی",
+  "calendar": "تقویم هفتگی",
+  "Cards": "کارت‌ها",
+  "cards": "کارت‌ها",
+  "Compact": "فشرده",
+  "compact": "فشرده",
+  "Flow": "مسیر گام‌به‌گام",
+  "flow": "مسیر گام‌به‌گام",
+  "Focus first": "تمرکز بر کار جاری",
+  "Reading flow": "نمای متنی",
+  "A time-aware day plan with a clear next step.": "برنامهٔ روزانهٔ زمان‌محور با گام بعدی روشن.",
+  "Separate day lanes that are easy to scan.": "ستون‌های جداگانه برای مرور آسان روزها.",
+  "Seven day columns for a broad weekly view.": "ستون‌هایی برای دیدی گسترده از هفت روز.",
+  "Comfortable task cards with room to breathe.": "کارت‌هایی خوانا با فضای کافی برای هر وظیفه.",
+  "A tidy list that keeps extra detail out of the way.": "فهرستی مرتب که جزئیات ثانویه را کنار می‌گذارد.",
+  "A connected sequence for moving from one task to the next.": "مسیر پیوسته‌ای برای پیش‌رفتن از یک وظیفه به وظیفهٔ بعد.",
+  "One clear priority, with the next few steps close at hand.": "یک اولویت روشن و چند گام بعدی در دسترس.",
+  "A calm, text-first plan with an editorial rhythm.": "برنامه‌ای متنی و آرام با نظمی خوانا.",
+  "Clear daily agenda": "برنامهٔ روزانهٔ روشن",
+  "Focused workspace": "فضای کاری متمرکز",
+  "Simple compact list": "فهرست ساده و فشرده",
+  "Visual task cards": "کارت‌های دیداری وظایف",
+  "A calm, time-aware day plan with clear next steps.": "برنامه‌ای آرام و زمان‌محور با گام‌های بعدی روشن.",
+  "A tidy, low-noise list that keeps task details in the editor.": "فهرستی ساده که جزئیات وظیفه را در بخش ویرایش نگه می‌دارد.",
+  "A warm card layout that makes each task easy to scan.": "چیدمانی کارتی و دلنشین برای مرور آسان وظایف.",
+  "Advanced routine runner": "تنظیمات پیشرفتهٔ اجراکنندهٔ روال",
+  "Five optional controls tune the step runner. These settings do not change your saved routines.": "این پنج گزینه رفتار اجراکننده را تنظیم می‌کنند و محتوای روال‌های ذخیره‌شده را تغییر نمی‌دهند.",
+  "Auto-advance timed steps": "رفتن خودکار به گام بعد",
+  "When the countdown reaches zero, complete this step and begin the next one.": "با پایان زمان‌سنج، گام جاری تکمیل و گام بعدی آغاز می‌شود.",
+  "Play a step chime": "پخش آوای پایان گام",
+  "Use a short, locally generated tone when a step changes.": "هنگام تغییر گام، آوایی کوتاه در همین دستگاه پخش شود.",
+  "Vibrate on step change": "لرزش هنگام تغییر گام",
+  "Give a brief haptic cue on supported phones and browsers.": "در تلفن‌ها و مرورگرهای پشتیبانی‌شده، لرزشی کوتاه ایجاد شود.",
+  "Keep the screen awake": "روشن نگه‌داشتن صفحه",
+  "Request the browser’s screen wake lock while a routine is running; may use more battery.": "هنگام اجرای روال از مرورگر خواسته می‌شود صفحه را روشن نگه دارد؛ این کار ممکن است باتری بیشتری مصرف کند.",
+  "Show the next step": "نمایش گام بعدی",
+  "Preview what follows the current step so you can prepare.": "گام بعدی را برای آمادگی بیشتر پیش‌نمایش کنید.",
+  "Five themes": "پنج پوسته",
+  "Color scheme": "حالت رنگی",
+  "The structure of the timeline is independent from the colours — mix them freely.": "ساختار برنامه از رنگ‌ها مستقل است؛ آن‌ها را آزادانه ترکیب کنید.",
+});
+
+let activeLanguage = "en";
+let staticTextNodes = [];
+let staticAttributes = [];
+let initialized = false;
+const FONT_STACKS = {
+  vazirmatn: '"Vazirmatn", "IRANSansX", "Dana", "Yekan Bakh", "Noto Sans Arabic", "Geeza Pro", system-ui, Tahoma, Arial, sans-serif',
+  estedad: '"Estedad", "Vazirmatn", "Yekan Bakh", "Noto Sans Arabic", "Geeza Pro", system-ui, Tahoma, Arial, sans-serif',
+  naskh: '"Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro", "Vazirmatn", system-ui, Tahoma, serif',
+  sahel: '"Sahel", "Vazirmatn", "IRANSans", "Noto Sans Arabic", "Geeza Pro", system-ui, Tahoma, Arial, sans-serif',
+};
+
+function activeSettings() {
+  return store.get("settings", {}) || {};
+}
+
+export function isPersian() {
+  return activeLanguage === "fa";
+}
+
+function usesPersianDigits() {
+  const style = activeSettings().digit_style || "auto";
+  return style === "persian" || (style === "auto" && isPersian());
+}
+
+function digits(value) {
+  const text = String(value);
+  return usesPersianDigits() ? text.replace(/\d/g, (n) => "۰۱۲۳۴۵۶۷۸۹"[Number(n)]) : text;
+}
+
+export function t(value) {
+  const source = String(value ?? "");
+  if (!isPersian()) return source;
+  const trimmed = source.trim();
+  let translated = FA[trimmed];
+  if (!translated) {
+    let match = trimmed.match(/^Day\s+(\d+)$/i);
+    if (match) translated = `روز ${digits(match[1])}`;
+    if (!translated && (match = trimmed.match(/^layout:\s*(agenda|board|calendar|cards|compact|flow|focus|stream|console|table|tiles)$/i))) translated = `چیدمان: ${t(match[1])}`;
+    if (!translated && (match = trimmed.match(/^(\d+)\s+open$/i))) translated = `${digits(match[1])} وظیفهٔ باز`;
+    if (!translated && (match = trimmed.match(/^(\d+)\s+ready$/i))) translated = `${digits(match[1])} آماده`;
+    if (!translated && (match = trimmed.match(/^(\d+)\s+tasks?$/i))) translated = `${digits(match[1])} وظیفه`;
+    if (!translated && (match = trimmed.match(/^In\s+(\d+)\s+days?$/i))) translated = `${digits(match[1])} روز دیگر`;
+    if (!translated && (match = trimmed.match(/^(\d+)\s+days?\s+ago$/i))) translated = `${digits(match[1])} روز پیش`;
+    if (!translated && (match = trimmed.match(/^\+(\d+)d$/i))) translated = `${digits(match[1])}+ روز`;
+    if (!translated && (match = trimmed.match(/^(\d+)%$/))) translated = `${digits(match[1])}٪`;
+    if (!translated && (match = trimmed.match(/^(\d+)\s+in queue$/i))) translated = `${digits(match[1])} در صف`;
+    if (!translated && (match = trimmed.match(/^(\d+)\s+open$/i))) translated = `${digits(match[1])} باز`;
+    if (!translated && (match = trimmed.match(/^Level\s+(\d+)\s+·\s+(.+?)\s+·\s+(\d+)\s+xp$/i))) translated = `سطح ${digits(match[1])} · ${match[2]} · ${digits(match[3])} امتیاز`;
+    if (!translated && (match = trimmed.match(/^State in memory: ([\d.]+) KB · prefs stored locally$/i))) translated = `اطلاعات در حافظه: ${digits(match[1])} کیلوبایت · ترجیحات به‌صورت محلی ذخیره شده‌اند`;
+    if (!translated && (match = trimmed.match(/^Day\s+(\d+)\s+—\s+(.+)$/i))) translated = `روز ${digits(match[1])} — ${match[2]}`;
+    if (!translated && (match = trimmed.match(/^(\d+) open tasks — your WIP limit is (\d+)$/i))) translated = `${digits(match[1])} وظیفهٔ باز — سقف هم‌زمان ${digits(match[2])} است`;
+    if (!translated && (match = trimmed.match(/^Added (\d+) tasks?$/i))) translated = `${digits(match[1])} وظیفه افزوده شد`;
+    if (!translated && (match = trimmed.match(/^Added (\d+) task[s]? · skipped (\d+) line\(s\)$/i))) translated = `${digits(match[1])} وظیفه افزوده شد · ${digits(match[2])} خط نادیده گرفته شد`;
+    if (!translated && (match = trimmed.match(/^Undid: (.+)$/i))) translated = `بازگردانی شد: ${match[1]}`;
+    if (!translated && (match = trimmed.match(/^Redid: (.+)$/i))) translated = `دوباره انجام شد: ${match[1]}`;
+    if (!translated && (match = trimmed.match(/^Added “(.+)” as #(.+)$/i))) translated = `«${match[1]}» با برچسب #${match[2]} افزوده شد`;
+    if (!translated && (match = trimmed.match(/^Added “(.+)”$/i))) translated = `«${match[1]}» افزوده شد`;
+    if (!translated && (match = trimmed.match(/^“(.+)” done$/i))) translated = `«${match[1]}» انجام شد`;
+    if (!translated && (match = trimmed.match(/^“(.+)” moved to the end$/i))) translated = `«${match[1]}» به انتهای روز منتقل شد`;
+    if (!translated && (match = trimmed.match(/^“(.+)” finished$/i))) translated = `«${match[1]}» به پایان رسید`;
+    if (!translated && (match = trimmed.match(/^Focusing “(.+)”$/i))) translated = `تمرکز روی «${match[1]}» آغاز شد`;
+    if (!translated && (match = trimmed.match(/^(Focus|Break) logged: (.+)$/i))) translated = `جلسهٔ ${match[1].toLowerCase() === "focus" ? "تمرکز" : "استراحت"} ثبت شد: ${t(match[2])}`;
+    if (!translated && (match = trimmed.match(/^(.+) — (due now|now|in .+|تا .+ دیگر|اکنون)$/i))) translated = `یادآوری برای «${match[1]}»: ${t(match[2])}`;
+    if (!translated && (match = trimmed.match(/^“(.+)” will be removed\. You can still undo this\.$/i))) translated = `«${match[1]}» حذف می‌شود؛ همچنان می‌توانید این کار را بازگردانید.`;
+    if (!translated && (match = trimmed.match(/^Day\s+(\d+) cleared — open work moved to day (\d+)$/i))) translated = `روز ${digits(match[1])} پاک شد؛ وظایف باز به روز ${digits(match[2])} منتقل شدند`;
+    if (!translated && (match = trimmed.match(/^(.+) cleared — every task done 🎉$/i))) translated = `${match[1]} پاک شد؛ همهٔ وظایف انجام شدند 🎉`;
+    if (!translated && (match = trimmed.match(/^Added (\d+) tasks? to (.+)$/i))) translated = `${digits(match[1])} وظیفه به ${t(match[2])} افزوده شد`;
+    if (!translated && (match = trimmed.match(/^Moved to (.+)$/i))) translated = `به ${t(match[1])} منتقل شد`;
+    if (!translated && (match = trimmed.match(/^Split into (\d+) parts?$/i))) translated = `به ${digits(match[1])} بخش تقسیم شد`;
+    if (!translated && (match = trimmed.match(/^Updated (\d+) tasks?$/i))) translated = `${digits(match[1])} وظیفه به‌روزرسانی شد`;
+    if (!translated && (match = trimmed.match(/^(\d+) tasks? archived$/i))) translated = `${digits(match[1])} وظیفه بایگانی شد`;
+    if (!translated && (match = trimmed.match(/^Removed (\d+) events?$/i))) translated = `${digits(match[1])} رویداد حذف شد`;
+    if (!translated && (match = trimmed.match(/^Imported (\d+) tasks?, (\d+) tags?$/i))) translated = `${digits(match[1])} وظیفه و ${digits(match[2])} برچسب وارد شد`;
+    if (!translated && (match = trimmed.match(/^Adopted (\d+) tasks? and (\d+) tags?$/i))) translated = `${digits(match[1])} وظیفه و ${digits(match[2])} برچسب منتقل شد`;
+    if (!translated && (match = trimmed.match(/^Back online — syncing (\d+) change\(s\)$/i))) translated = `اتصال برقرار شد؛ ${digits(match[1])} تغییر در حال همگام‌سازی است`;
+    if (!translated && (match = trimmed.match(/^Synced (\d+) queued change\(s\)$/i))) translated = `${digits(match[1])} تغییر صف‌شده همگام‌سازی شد`;
+    if (!translated && (match = trimmed.match(/^(Lumen|Midnight|Terminal|Slate|Zen Paper|Arcade|Harbor) applied$/i))) translated = `پوستهٔ ${t(match[1])} اعمال شد`;
+    if (!translated && (match = trimmed.match(/^Preset: (.+) min$/i))) translated = `الگوی زمان‌سنج: ${match[1]} دقیقه`;
+    if (!translated && (match = trimmed.match(/^(\d+) total$/i))) translated = `${digits(match[1])} وظیفه در مجموع`;
+    if (!translated && (match = trimmed.match(/^(.+) left$/i))) translated = `${match[1]} باقی‌مانده`;
+    if (!translated && (match = trimmed.match(/^(.+) planned$/i))) translated = `${match[1]} برنامه‌ریزی‌شده`;
+    if (!translated && (match = trimmed.match(/^(.+) focused$/i))) translated = `${match[1]} زمان تمرکز`;
+    if (!translated && (match = trimmed.match(/^(\d+) open · (.+)$/i))) translated = `${digits(match[1])} وظیفهٔ باز · ${match[2]}`;
+    if (!translated && (match = trimmed.match(/^Day\s+(\d+) is outside the current range — widen it in Plan → Range$/i))) translated = `روز ${digits(match[1])} بیرون از بازهٔ فعلی است؛ بازه را از برنامه‌ریزی ← بازه گسترش دهید`;
+    if (!translated && (match = trimmed.match(/^(\d+) task\(s\) archived$/i))) translated = `${digits(match[1])} وظیفه بایگانی شد`;
+    if (!translated && (match = trimmed.match(/^(\d+) task\(s\) removed$/i))) translated = `${digits(match[1])} وظیفه حذف شد`;
+    if (!translated && (match = trimmed.match(/^Task ([^:]+): (.+)$/i))) translated = `وظیفه ${match[1]}: ${match[2]}`;
+    if (!translated && (match = trimmed.match(/^(\d+) task\(s\)$/i))) translated = `${digits(match[1])} وظیفه`;
+    if (!translated && (match = trimmed.match(/^(\d+) step\(s\)$/i))) translated = `${digits(match[1])} گام`;
+    if (!translated && (match = trimmed.match(/^(\d+)\/([\d.]+) steps?$/i))) translated = `${digits(match[1])} از ${digits(match[2])} گام`;
+    if (!translated && (match = trimmed.match(/^in\s+(.+)$/i))) translated = `تا ${t(match[1])} دیگر`;
+    if (!translated && (match = trimmed.match(/^(\d+):(\d{2})(?::(\d{2}))?$/))) translated = `${digits(trimmed)}`;
+    if (!translated && (match = trimmed.match(/^Every\s+(\d+)\s+days?$/i))) translated = `هر ${digits(match[1])} روز`;
+    if (!translated && (match = trimmed.match(/^Monthly\s+×(\d+)$/i))) translated = `هر ${digits(match[1])} ماه`;
+    if (!translated && (match = trimmed.match(/^([+-]?\d+(?:\.\d+)?)\s*m$/i))) translated = `${digits(match[1])} دقیقه`;
+    if (!translated && (match = trimmed.match(/^([+-]?\d+(?:\.\d+)?)\s*h$/i))) translated = `${digits(match[1])} ساعت`;
+    if (!translated && (match = trimmed.match(/^([+-]?\d+(?:\.\d+)?)\s*d$/i))) translated = `${digits(match[1])} روز`;
+    if (!translated && (match = trimmed.match(/^([+-]?\d+(?:\.\d+)?)\s*xp$/i))) translated = `${digits(match[1])} امتیاز`;
+    if (!translated && (match = trimmed.match(/^([+-]?\d+(?:\.\d+)?)%$/))) translated = `${digits(match[1])}٪`;
+  }
+  if (translated === undefined) return source;
+  const leading = source.match(/^\s*/)?.[0] || "";
+  const trailing = source.match(/\s*$/)?.[0] || "";
+  return `${leading}${translated}${trailing}`;
+}
+
+function saveStaticReferences() {
+  if (initialized || !document.body) return;
+  initialized = true;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const parent = node.parentElement;
+    if (!parent || parent.closest("script, style, svg, code, kbd, textarea, input, [data-no-translate], #bootData")) continue;
+    if (!node.nodeValue.trim()) continue;
+    staticTextNodes.push({ node, source: node.nodeValue });
+  }
+  document.querySelectorAll("[placeholder], [title], [aria-label], [aria-description]").forEach((element) => {
+    if (element.closest("[data-no-translate]")) return;
+    ["placeholder", "title", "aria-label", "aria-description"].forEach((attribute) => {
+      const source = element.getAttribute(attribute);
+      if (source) staticAttributes.push({ element, attribute, source });
+    });
+  });
+}
+
+function paintStaticContent() {
+  staticTextNodes.forEach(({ node, source }) => {
+    if (node.isConnected) node.nodeValue = isPersian() ? translateTextNode(source) : source;
+  });
+  staticAttributes.forEach(({ element, attribute, source }) => {
+    if (element.isConnected) element.setAttribute(attribute, isPersian() ? t(source) : source);
+  });
+}
+
+function translateTextNode(source) {
+  const leading = source.match(/^\s*/)?.[0] || "";
+  const trailing = source.match(/\s*$/)?.[0] || "";
+  const value = source.trim();
+  // Split short adjacent text fragments such as "#tag or an alias ·" without
+  // touching parser syntax. The dictionary handles complete fragments first.
+  const direct = FA[value];
+  if (direct !== undefined) return `${leading}${direct}${trailing}`;
+  return `${leading}${t(value)}${trailing}`;
+}
+
+function applyFont(settings) {
+  const root = document.documentElement;
+  if (settings.language !== "fa") {
+    delete root.dataset.persianFont;
+    root.style.removeProperty("--font-ui");
+    root.style.removeProperty("--font-head");
+    return;
+  }
+  const family = FONT_STACKS[settings.persian_font] || FONT_STACKS.vazirmatn;
+  root.dataset.persianFont = settings.persian_font || "vazirmatn";
+  root.style.setProperty("--font-ui", family);
+  root.style.setProperty("--font-head", family);
+}
+
+export function applyLocale(settings = activeSettings(), { notify = true } = {}) {
+  const nextLanguage = settings.language === "fa" ? "fa" : "en";
+  const changed = activeLanguage !== nextLanguage;
+  activeLanguage = nextLanguage;
+  const root = document.documentElement;
+  root.lang = nextLanguage === "fa" ? "fa-IR" : "en";
+  root.dir = nextLanguage === "fa" ? "rtl" : "ltr";
+  root.dataset.locale = nextLanguage;
+  root.dataset.calendar = settings.calendar_system === "auto" || !settings.calendar_system
+    ? (nextLanguage === "fa" ? "jalali" : "gregorian") : settings.calendar_system;
+  applyFont(settings);
+  if (staticTextNodes.length) paintStaticContent();
+  document.querySelectorAll("[data-guide-lang]").forEach((section) => {
+    section.hidden = section.dataset.guideLang !== nextLanguage;
+  });
+  document.title = nextLanguage === "fa" ? "تسک‌آرکید — زمان را به بازی بگیرید" : "TaskArcade — make time visible";
+  if (changed && notify) document.dispatchEvent(new CustomEvent("taskarcade:locale", { detail: { language: nextLanguage, direction: root.dir } }));
+  return { language: nextLanguage, direction: root.dir, changed };
+}
+
+export function initI18n() {
+  saveStaticReferences();
+  applyLocale(activeSettings(), { notify: false });
+  on("state", () => applyLocale(activeSettings()));
+  return { t, applyLocale };
+}
+
+if (typeof window !== "undefined") {
+  window.TaskArcadeI18n = { t, isPersian, applyLocale };
+}

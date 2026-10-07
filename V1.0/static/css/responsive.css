@@ -1,0 +1,283 @@
+/* ==========================================================================
+   TaskArcade — responsive layer
+   Mobile is the baseline the app is designed from: the bottom navigation and
+   bottom sheets are the natural behaviour, and wider screens progressively
+   reveal the desktop affordances.
+   ========================================================================== */
+
+:root {
+  --mobile-nav-space: 0px;
+  --mobile-nav-h: 62px;
+}
+
+/* ==========================================================================
+   Phones (default refinements) — up to 640px
+   ========================================================================== */
+@media (max-width: 640px) {
+  .workspace { padding: 12px 12px calc(18px + var(--mobile-nav-space)); }
+  .topbar { padding: 8px 10px; gap: 8px; flex-wrap: wrap; }
+  .brand-sub { display: none; }
+  .topbar-brand { gap: 8px; }
+  .brand-mark { height: 18px; }
+  .topbar-progress { order: 5; max-width: none; flex-basis: 100%; }
+  .day-stepper { margin-left: auto; }
+  .day-stepper-body { min-width: 74px; }
+  .topbar-actions { gap: 0; }
+  .topbar-actions .icon-btn { width: 38px; height: 38px; }
+  #helpBtn { display: none; }
+
+  .now-grid { grid-template-columns: minmax(0, 1fr); }
+  .now-body { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+  .now-ring { width: min(210px, 62vw); height: min(210px, 62vw); margin: 0 auto; order: -1; }
+  .now-title { font-size: calc(var(--fs-xl) * var(--font-scale)); }
+  .now-actions { gap: 6px; }
+  .now-actions .btn { flex: 1 1 44%; }
+  .now-actions .btn-primary { flex-basis: 100%; }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .quickadd-field { flex-wrap: wrap; padding: 10px; gap: 8px; }
+  .quickadd-field input { flex: 1 1 100%; min-height: 34px; }
+  .quickadd-field .btn { flex: 1 1 100%; }
+  .quickadd-hint { display: none; }
+
+  .task-row { grid-template-columns: auto minmax(0, 1fr) auto; padding: 11px 12px; }
+  .task-drag { display: none; }
+  .task-side { gap: 2px; }
+  .task-row.is-swiping { transition: none; }
+
+  .focus-body { grid-template-columns: minmax(0, 1fr); }
+  .focus-ring-wrap { width: min(240px, 66vw); height: min(240px, 66vw); margin: 0 auto; }
+  .focus-grid { grid-template-columns: minmax(0, 1fr); }
+  .focus-controls .btn { flex: 1 1 46%; }
+
+  .field-row { grid-template-columns: minmax(0, 1fr); }
+  .toolbar-row { align-items: stretch; }
+  .toolbar-row .field.inline { justify-content: space-between; }
+  .toolbar-row .field.inline select,
+  .toolbar-row .field.inline input { flex: 1 1 auto; }
+  .toolbar-row-actions .btn { flex: 1 1 44%; }
+
+  .sheet { padding: 0; place-items: end stretch; }
+  .sheet-top { place-items: start stretch; padding-top: 8vh; }
+  .sheet-panel,
+  .sheet-panel-wide,
+  .sheet-panel-palette,
+  .sheet-panel-compact {
+    width: 100%;
+    max-width: none;
+    max-height: 92dvh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-bottom: 0;
+    padding-bottom: var(--safe-bottom);
+  }
+  .sheet-head { padding: 14px 16px; }
+  .sheet-body { padding: 16px; }
+  .sheet-actions { padding: 12px 16px calc(12px + var(--safe-bottom)); }
+  .sheet-actions .btn { flex: 1 1 auto; }
+  .sheet-panel::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42px;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--border-strong);
+  }
+  .sheet-panel { position: relative; }
+
+  .insight-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .insight-grid { grid-template-columns: minmax(0, 1fr); }
+  .library-grid { grid-template-columns: minmax(0, 1fr); }
+  .streak-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bar-chart { height: 132px; }
+  .heatmap i { width: 11px; height: 11px; }
+
+  .toasts { width: calc(100vw - 24px); }
+  .segmented { width: 100%; }
+  .segmented button { flex: 1 1 auto; text-align: center; }
+  .switch-row { padding: 12px 0; }
+  .switch { width: 52px; height: 30px; }
+  .switch span { width: 22px; }
+  .switch[aria-checked="true"] span { transform: translateX(22px); }
+}
+
+/* ==========================================================================
+   Mobile navigation appears until tablets take over
+   ========================================================================== */
+@media (max-width: 900px) {
+  :root { --mobile-nav-space: calc(var(--mobile-nav-h) + var(--safe-bottom) + 10px); }
+  .tabbar { display: none; }
+  .app { grid-template-areas: "topbar" "main"; grid-template-rows: auto minmax(0, 1fr); }
+
+  .mobile-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-nav);
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px calc(6px + var(--safe-bottom));
+    background: var(--topbar-bg);
+    backdrop-filter: blur(var(--blur));
+    -webkit-backdrop-filter: blur(var(--blur));
+    border-top: var(--border-w) solid var(--border);
+  }
+
+  .mobile-tab {
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    min-height: 48px;
+    border-radius: var(--radius-sm);
+    color: var(--text-faint);
+    font-size: 9.2px;
+    letter-spacing: .02em;
+    transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  }
+  .mobile-tab svg.i { width: 1.35em; height: 1.35em; }
+  .mobile-tab.is-active { color: var(--accent); background: var(--accent-soft); }
+  .mobile-tab-add {
+    background: var(--accent);
+    color: var(--accent-ink);
+    width: 52px;
+    height: 52px;
+    min-height: 52px;
+    margin: -18px auto 0;
+    border-radius: 50%;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  .mobile-tab-add svg.i { width: 1.6em; height: 1.6em; stroke-width: 2.2; }
+
+  /* Board layout becomes a snap-scrolling carousel on small screens */
+  [data-layout="board"] .timeline-inner {
+    grid-auto-columns: minmax(84vw, 1fr);
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 4px;
+  }
+  [data-layout="board"] .day-column { scroll-snap-align: start; }
+
+  /* Tables get horizontal breathing room instead of squeezing */
+  [data-layout="table"] .day-column { overflow-x: auto; }
+  [data-layout="table"] .task-card-block,
+  [data-layout="table"] .table-head-row { min-width: 620px; }
+
+  .now-grid { grid-template-columns: minmax(0, 1fr); }
+  .today-side { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .focus-layout { grid-template-columns: minmax(0, 1fr); }
+  .focus-primary-card { min-height: 260px; }
+  .routine-library-grid,
+  .routine-runner-layout { grid-template-columns: minmax(0, 1fr); }
+  .routine-overview { grid-template-columns: 64px minmax(0, 1fr); gap: 10px; }
+  .routine-progress-ring { width: 62px; height: 62px; }
+  .routine-runner-empty { grid-template-columns: 44px minmax(0, 1fr); }
+  .routine-runner-empty-icon { width: 42px; height: 42px; border-radius: 13px; }
+  .routine-runner-empty-hint { grid-column: 2; white-space: normal; }
+  .routines-page-header { align-items: stretch; flex-direction: column; }
+  .routines-page-actions { width: 100%; }
+  .routines-page-actions .btn { flex: 1; }
+  .routine-step-edit { grid-template-columns: 22px minmax(0, 1fr); }
+  .routine-step-edit-actions { grid-column: 2; justify-content: flex-end; }
+  .layout-calendar-grid { grid-template-columns: repeat(7, minmax(132px, 1fr)); }
+  [data-layout="cards"] .day-tasks { grid-template-columns: minmax(0, 1fr); }
+  [data-layout="compact"] .day-column { overflow-x: auto; }
+  [data-layout="compact"] .task-card-block,
+  [data-layout="compact"] .table-head-row { min-width: 560px; }
+  .routine-runner-steps { grid-template-columns: minmax(0, 1fr); }
+  .routine-runner-overview { grid-template-columns: 68px minmax(0, 1fr); }
+  .routine-countdown { font-size: clamp(2.2rem, 12vw, 4rem); }
+}
+
+/* Desktop: hide the mobile navigation entirely */
+@media (min-width: 901px) {
+  .mobile-nav { display: none; }
+  :root { --mobile-nav-space: 0px; }
+}
+
+/* ==========================================================================
+   Tablets 641px – 1024px
+   ========================================================================== */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .now-grid { grid-template-columns: minmax(0, 1fr); }
+  .now-body { grid-template-columns: minmax(0, 1fr) auto; }
+  .today-side { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); display: grid; }
+  .focus-grid { grid-template-columns: minmax(0, 1fr); }
+  .focus-body { grid-template-columns: auto minmax(0, 1fr); }
+  .insight-cards { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+
+/* ==========================================================================
+   Large desktop — a two-column cockpit for the Now view
+   ========================================================================== */
+@media (min-width: 1360px) {
+  :root { --ring-size: 214px; }
+  .now-grid { grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); }
+  .timeline-inner { gap: var(--sp-5); }
+}
+
+/* Ultra wide screens: cap readability */
+@media (min-width: 1900px) {
+  :root { --shell-max: 1780px; }
+}
+
+/* ==========================================================================
+   Touch devices — bigger targets, no hover-only affordances
+   ========================================================================== */
+@media (hover: none) {
+  .task-card-block .task-block-actions { opacity: 1; }
+  .btn:hover:not(:disabled) { background: var(--btn-bg, var(--surface-2)); }
+  .task-row:hover { background: var(--surface-2); }
+  .upnext-item:hover { background: transparent; }
+}
+
+@media (pointer: coarse) {
+  .task-check { width: 30px; height: 30px; }
+  .task-drag { width: 34px; }
+  .icon-btn { width: 42px; height: 42px; }
+  .chip { min-height: 34px; }
+  input, select, textarea { min-height: 44px; }
+  .tab { padding: 10px 16px; }
+}
+
+/* ==========================================================================
+   Short viewports (landscape phones)
+   ========================================================================== */
+@media (max-height: 560px) and (orientation: landscape) {
+  .topbar { position: static; }
+  .sheet { place-items: start center; padding-top: 10px; }
+  .sheet-panel { max-height: calc(100dvh - 20px); border-radius: var(--radius); }
+  .focus-ring-wrap { width: 180px; height: 180px; }
+  .now-ring { width: 160px; height: 160px; }
+}
+
+/* ==========================================================================
+   Very small screens (≤ 360px)
+   ========================================================================== */
+@media (max-width: 360px) {
+  .now-actions .btn { flex-basis: 100%; }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .insight-cards { grid-template-columns: minmax(0, 1fr); }
+  .day-stepper-body { min-width: 64px; }
+  .day-stepper-label { font-size: var(--fs-xs); }
+}
+
+/* ==========================================================================
+   Foldables / narrow split view
+   ========================================================================== */
+@media (max-width: 300px) {
+  .topbar-actions { display: none; }
+  .mobile-tab span { display: none; }
+}
+
+/* ==========================================================================
+   Reduced data / low-power mode: drop decorative effects
+   ========================================================================== */
+@media (prefers-reduced-data: reduce) {
+  [data-theme="arcade"] .progress-fill,
+  [data-theme="arcade"] .day-column.is-current { animation: none; }
+  .heatmap { grid-template-rows: repeat(7, auto); }
+}

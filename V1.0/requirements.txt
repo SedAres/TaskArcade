@@ -1,0 +1,2 @@
+# TaskArcade V1.0 — runtime requirements
+Flask>=3.0
