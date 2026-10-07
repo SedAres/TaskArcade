@@ -1,0 +1,18 @@
+# Database + WAL files
+/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

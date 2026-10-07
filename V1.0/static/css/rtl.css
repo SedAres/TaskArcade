@@ -1,0 +1,141 @@
+/*
+   TaskArcade RTL and Persian typography layer.
+   Applied only when the selected interface language is Persian. Layout rules
+   are isolated here so English remains visually unchanged.
+*/
+
+html[dir="rtl"] body,
+html[dir="rtl"] button,
+html[dir="rtl"] input,
+html[dir="rtl"] select,
+html[dir="rtl"] textarea {
+  font-family: var(--font-ui);
+}
+
+html[dir="rtl"] body { text-align: right; }
+html[dir="rtl"] .workspace,
+html[dir="rtl"] .panel,
+html[dir="rtl"] .sheet-panel,
+html[dir="rtl"] .dialog-panel { text-align: right; }
+
+/* Use start/end-aware spacing for the application shell and its controls. */
+html[dir="rtl"] .topbar-actions { margin-left: 0; margin-right: auto; }
+html[dir="rtl"] .day-stepper { direction: rtl; }
+html[dir="rtl"] .day-stepper-body { direction: rtl; }
+html[dir="rtl"] .day-stepper-sub { letter-spacing: 0; }
+html[dir="rtl"] .tabbar,
+html[dir="rtl"] .sheet-tabs,
+html[dir="rtl"] .mobile-nav { direction: rtl; }
+html[dir="rtl"] .mobile-tab { direction: rtl; }
+html[dir="rtl"] .panel-head,
+html[dir="rtl"] .sheet-head,
+html[dir="rtl"] .toolbar-row,
+html[dir="rtl"] .toolbar-row-actions,
+html[dir="rtl"] .row-between,
+html[dir="rtl"] .switch-row,
+html[dir="rtl"] .range-row,
+html[dir="rtl"] .goal-row,
+html[dir="rtl"] .meter-row,
+html[dir="rtl"] .day-title-row,
+html[dir="rtl"] .tag-split-head,
+html[dir="rtl"] .sync-status { direction: rtl; }
+
+html[dir="rtl"] .field,
+html[dir="rtl"] .field label,
+html[dir="rtl"] .field small,
+html[dir="rtl"] .setting-block,
+html[dir="rtl"] .block-note,
+html[dir="rtl"] .panel-note,
+html[dir="rtl"] .task-main,
+html[dir="rtl"] .task-meta { text-align: right; }
+
+html[dir="rtl"] .field-row-inline,
+html[dir="rtl"] .field-row,
+html[dir="rtl"] .segmented,
+html[dir="rtl"] .sheet-actions,
+html[dir="rtl"] .bulk-actions,
+html[dir="rtl"] .focus-controls,
+html[dir="rtl"] .focus-task-actions,
+html[dir="rtl"] .now-actions { direction: rtl; }
+
+/* Reverse only symbols that communicate physical direction. */
+html[dir="rtl"] svg.i:has(use[href="#i-arrow-right"]),
+html[dir="rtl"] svg.i:has(use[href="#i-arrow-left"]),
+html[dir="rtl"] svg.i:has(use[href="#i-skip"]) { transform: scaleX(-1); }
+
+/* Progress is anchored at the right edge in RTL instead of the left. */
+html[dir="rtl"] .progress-track { display: flex; direction: rtl; justify-content: flex-start; }
+html[dir="rtl"] .progress-fill { flex: 0 0 auto; background-image: linear-gradient(270deg, var(--accent), var(--accent-2)); }
+html[dir="rtl"] .progress-fill-good { background-image: linear-gradient(270deg, var(--good), var(--accent-2)); }
+html[dir="rtl"] .progress-fill-goal { background-image: linear-gradient(270deg, var(--accent-2), var(--accent)); }
+
+/* Task row's colored rail and pinned accent sit on the logical start edge. */
+html[dir="rtl"] .task-row { border-left: 0; border-right: 3px solid var(--tag-color, var(--border-strong)); }
+html[dir="rtl"] .task-row.is-pinned { border-right-width: 5px; }
+html[dir="rtl"] .task-row::before,
+html[dir="rtl"] .task-row::after { left: auto; right: 0; }
+html[dir="rtl"] .task-row .task-side { justify-content: flex-start; }
+html[dir="rtl"] .task-row .task-main { direction: rtl; }
+html[dir="rtl"] .task-row .task-check,
+html[dir="rtl"] .task-row .task-drag { justify-self: start; }
+
+/* Native-looking Persian inputs with deliberate direction for mixed content. */
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select { text-align: right; }
+html[dir="rtl"] input::placeholder,
+html[dir="rtl"] textarea::placeholder { direction: rtl; text-align: right; }
+html[dir="rtl"] input[type="time"],
+html[dir="rtl"] input[type="datetime-local"],
+html[dir="rtl"] input[type="number"],
+html[dir="rtl"] input[type="range"],
+html[dir="rtl"] input[type="color"],
+html[dir="rtl"] .numeric,
+html[dir="rtl"] .timer-number,
+html[dir="rtl"] .topbar-progress-text,
+html[dir="rtl"] kbd,
+html[dir="rtl"] code { direction: ltr; unicode-bidi: isolate; text-align: left; }
+html[dir="rtl"] select {
+  padding-right: 12px;
+  padding-left: 32px;
+  background-position: 15px 50%, 10px 50%;
+}
+
+html[dir="rtl"] .brand-sub { letter-spacing: 0; }
+html[dir="rtl"] .activity-kind,
+html[dir="rtl"] code,
+html[dir="rtl"] kbd { font-family: var(--font-mono); }
+html[dir="rtl"] .quickadd-icon { margin-inline-start: 0; margin-inline-end: 4px; }
+html[dir="rtl"] .quickadd-field input { direction: auto; }
+html[dir="rtl"] .timeline { direction: rtl; }
+html[dir="rtl"] .timeline-inner { direction: rtl; }
+html[dir="rtl"] .heatmap { direction: rtl; }
+html[dir="rtl"] .bar-chart { direction: rtl; }
+html[dir="rtl"] .hour-chart { direction: rtl; }
+html[dir="rtl"] .mobile-nav { padding-inline: 8px; }
+html[dir="rtl"] .sheet-panel::before { left: 50%; right: auto; }
+html[dir="rtl"] .skip-link { left: auto; right: 50%; transform: translateX(50%); }
+
+/* Four locally-installable Persian font families, each with platform-safe fallbacks.
+   No CDN is requested; the app continues to work fully offline. */
+html[lang^="fa"][data-persian-font="vazirmatn"] { --font-ui: "Vazirmatn", "IRANSansX", "Dana", "Yekan Bakh", "Noto Sans Arabic", "Geeza Pro", system-ui, Tahoma, Arial, sans-serif; }
+html[lang^="fa"][data-persian-font="estedad"] { --font-ui: "Estedad", "Vazirmatn", "Yekan Bakh", "Noto Sans Arabic", "Geeza Pro", system-ui, Tahoma, Arial, sans-serif; }
+html[lang^="fa"][data-persian-font="naskh"] { --font-ui: "Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro", "Vazirmatn", system-ui, Tahoma, serif; }
+html[lang^="fa"][data-persian-font="sahel"] { --font-ui: "Sahel", "Vazirmatn", "IRANSans", "Noto Sans Arabic", "Geeza Pro", system-ui, Tahoma, Arial, sans-serif; }
+html[lang^="fa"] { --font-head: var(--font-ui); --lh-body: 1.75; --lh-tight: 1.45; }
+html[lang^="fa"] h1,
+html[lang^="fa"] h2,
+html[lang^="fa"] h3,
+html[lang^="fa"] h4 { letter-spacing: 0; }
+
+/* Settings uses a header, tab strip and scrollable body. The body must own the
+   final grid row or long settings panes become clipped instead of scrollable. */
+#settingsSheet .sheet-panel { grid-template-rows: auto auto minmax(0, 1fr); }
+#settingsBody { min-height: 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 640px) {
+  html[dir="rtl"] .day-stepper { margin-left: 0; margin-right: auto; }
+  html[dir="rtl"] .topbar-actions { margin-right: 0; margin-left: auto; }
+  #settingsSheet .sheet-panel { grid-template-rows: auto auto minmax(0, 1fr); max-height: 92dvh; }
+  #settingsBody { padding-bottom: calc(20px + var(--safe-bottom)); }
+}

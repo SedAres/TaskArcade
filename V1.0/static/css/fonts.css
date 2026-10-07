@@ -1,0 +1,68 @@
+/*
+ * Persian typefaces are served from this application. They do not contact a
+ * font CDN or any other third party, and the service worker caches them for
+ * offline use. See ../fonts/README.md and ../fonts/licenses/ for provenance.
+ */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("../fonts/Vazirmatn-VF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Estedad";
+  src: url("../fonts/Estedad-VF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Naskh Arabic";
+  src: url("../fonts/NotoNaskhArabic-VF.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sahel";
+  src: url("../fonts/Sahel-Light.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sahel";
+  src: url("../fonts/Sahel-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sahel";
+  src: url("../fonts/Sahel-SemiBold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sahel";
+  src: url("../fonts/Sahel-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sahel";
+  src: url("../fonts/Sahel-Black.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}

@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lumen" data-scheme="auto" data-density="cozy" data-layout="agenda">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0e17" id="themeColorMeta" />
+  <meta name="description" content="{{ app_tagline }} — plan in virtual days, run a focus timer, watch your progress build." />
+  <meta name="color-scheme" content="dark light" />
+  <title>{{ app_name }} — {{ app_tagline }}</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="stylesheet" href="/static/css/fonts.css" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <link rel="stylesheet" href="/static/css/themes.css" />
+  <link rel="stylesheet" href="/static/css/responsive.css" />
+  <link rel="stylesheet" href="/static/css/rtl.css" />
+  <link rel="stylesheet" href="/static/css/history-calendar.css" />
+</head>
+<body class="booting">
+<!-- ======================================================================
+     Icon sprite — every glyph the app needs, kept local so the UI works
+     offline and inside kiosk/embedded contexts.
+     ====================================================================== -->
+<svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11" /></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5 19.5 12 7 19.5z" /></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" /></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></symbol>
+  <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5l9 7-9 7zM17 5v14" /></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h13m0 0-5-5m5 5-5 5" /></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H6m0 0 5-5m-5 5 5 5" /></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9.5 6 6 6-6" /></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m6 14.5 6-6 6 6" /></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1Z" /></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4l10-10a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" /></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M8 3.5V7m8-3.5V7M3.5 10h17" /></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V9m5 11V4m5 16v-7m5 7V7" /></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3s5 4.2 5 8.6A5 5 0 0 1 7 12c0-1.6.7-2.9 1.6-4 .3 1.4 1.2 2 2 2 .9 0 1.4-.9 1.4-2 0-1.7-.7-3.3-1-5Z" /></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 11.5V5.5A1.5 1.5 0 0 1 5.5 4h6l8.5 8.5a1.5 1.5 0 0 1 0 2.1l-4.4 4.4a1.5 1.5 0 0 1-2.1 0Z" /><circle cx="8.5" cy="8.5" r="1.4" /></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 8 4.5-8 4.5-8-4.5z" /><path d="m4 12 8 4.5 8-4.5M4 16.5 12 21l8-4.5" /></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.5 3 6 13.5h5L10.5 21 18 10.5h-5z" /></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4 2.5 5.2 5.5.8-4 3.9 1 5.6-5-2.8-5 2.8 1-5.6-4-3.9 5.5-.8z" /></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="2.8" /></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15H7.5A2.5 2.5 0 0 0 5 20.5Z" /><path d="M5 20.5A2.5 2.5 0 0 1 7.5 18H19v3H7.5" /></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m4 11 8-6.5 8 6.5v7.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5Z" /><path d="M9.5 20v-5h5v5" /></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 4 1.7 4.3L18 10l-4.3 1.7L12 16l-1.7-4.3L6 10l4.3-1.7z" /><path d="m18.5 15.5.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" /></symbol>
+  <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7.5" width="18" height="12" rx="2.5" /><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3 13h18" /></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.7-7.5-9.7A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.5 2.9C19.5 15.3 12 20 12 20Z" /></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" /></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M4 9V7.5A2.5 2.5 0 0 1 6.5 5H17l-2-2.5M20 15v1.5A2.5 2.5 0 0 1 17.5 19H7l2 2.5" /><path d="m17 5-2 2.5M7 19l2 2.5" /></symbol>
+  <symbol id="i-template" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" /><path d="M3.5 9.5h17M9 9.5V19.5" /></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" /></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2m0 15v2M4.5 12h-2m19 0h-2M6.3 6.3 4.9 4.9m14.2 14.2-1.4-1.4M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1 1-1.1 1.8v.3" /><circle cx="12" cy="17" r=".9" /></symbol>
+  <symbol id="i-command" viewBox="0 0 24 24"><path d="M9 6.5A2.5 2.5 0 1 0 6.5 9H9zM15 6.5A2.5 2.5 0 1 1 17.5 9H15zM9 15H6.5A2.5 2.5 0 1 0 9 17.5zM15 15h2.5A2.5 2.5 0 1 1 15 17.5z" /><rect x="9" y="9" width="6" height="6" rx="1" /></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6.5h12M8 12h12M8 17.5h12M4 6.5h.01M4 12h.01M4 17.5h.01" /></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2" /><rect x="13" y="4" width="7" height="7" rx="2" /><rect x="4" y="13" width="7" height="7" rx="2" /><rect x="13" y="13" width="7" height="7" rx="2" /></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0 4-4m-4 4-4-4M4.5 19.5h15" /></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V5m0 0 4 4m-4-4-4 4M4.5 19.5h15" /></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7H14a5 5 0 0 1 0 10H8" /><path d="m9 7-3 3 3 3" /></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 7H10a5 5 0 0 0 0 10h6" /><path d="m15 7 3 3-3 3" /></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3.5 3.5H6.5L10 10z" /><path d="M12 13.5V21" /></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 4.5h9l5 5v10a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5z" /><path d="M14 4.5V10h5" /></symbol>
+  <symbol id="i-split" viewBox="0 0 24 24"><path d="M4 6h10a4 4 0 0 1 4 4v8" /><path d="M4 18h6a4 4 0 0 0 4-4V6" /><path d="m15 16 3 3 3-3" /></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M15 6.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h.5" /></symbol>
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" /><path d="M17 9.5h1.5a2.5 2.5 0 0 1 0 5H17M4.5 21h12" /></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13.5 6.4 5.8A2 2 0 0 1 8.3 4.5h7.4a2 2 0 0 1 1.9 1.3L20 13.5v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" /><path d="M4 13.5h4l1 2.5h6l1-2.5h4" /></symbol>
+  <symbol id="i-drag" viewBox="0 0 24 24"><circle cx="9" cy="7" r="1.2" /><circle cx="15" cy="7" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="17" r="1.2" /><circle cx="15" cy="17" r="1.2" /></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18" cy="12" r="1.6" /></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 5.5H6a2 2 0 0 0 2 3M16 5.5h2a2 2 0 0 1-2 3M10.5 13v3h3v-3M8 20h8" /></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.5 16V11a5.5 5.5 0 0 1 11 0v5l1.5 2.5H5z" /><path d="M10 19.5a2 2 0 0 0 4 0" /></symbol>
+  <symbol id="i-mobile" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2.5" /><path d="M11 18h2" /></symbol>
+</svg>
+
+<div class="app" id="appRoot" data-tab="today">
+  <a class="skip-link" href="#viewToday">Skip to content</a>
+
+  <!-- ==================================================================
+       Top bar: identity, day stepper, quick toggles
+       ================================================================== -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-brand">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="brand-text">
+        <strong class="brand-name">{{ app_name }}</strong>
+        <small class="brand-sub" id="brandSub">{{ app_tagline }}</small>
+      </span>
+    </div>
+
+    <div class="day-stepper" role="group" aria-label="Current virtual day">
+      <button class="icon-btn" id="dayPrev" type="button" title="Previous day (J)" aria-label="Previous day">
+        <svg class="i"><use href="#i-arrow-left" /></svg>
+      </button>
+      <button class="day-stepper-body" id="calendarPickBtn" type="button" title="Choose a calendar date" aria-label="Choose a calendar date">
+        <span class="day-stepper-label" id="dayLabel">Day 1</span>
+        <span class="day-stepper-sub" id="daySub">today</span>
+      </button>
+      <button class="icon-btn" id="dayNext" type="button" title="Next day (K)" aria-label="Next day">
+        <svg class="i"><use href="#i-arrow-right" /></svg>
+      </button>
+    </div>
+
+    <div class="topbar-progress" id="topbarProgress" title="Progress across the whole timeline">
+      <div class="progress-track progress-track-slim"><div class="progress-fill" id="topProgressFill"></div></div>
+      <span class="topbar-progress-text" id="topProgressText">0%</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="icon-btn" id="schemeBtn" type="button" title="Toggle light / dark (L)" aria-label="Toggle colour scheme"><svg class="i"><use href="#i-moon" /></svg></button>
+      <button class="icon-btn" id="focusModeBtn" type="button" title="Focus mode (F)" aria-label="Toggle focus mode"><svg class="i"><use href="#i-target" /></svg></button>
+      <button class="icon-btn" id="paletteBtn" type="button" title="Command palette (Ctrl+K)" aria-label="Open command palette"><svg class="i"><use href="#i-command" /></svg></button>
+      <button class="icon-btn" id="helpBtn" type="button" title="Shortcuts (?)" aria-label="Keyboard shortcuts"><svg class="i"><use href="#i-help" /></svg></button>
+      <button class="icon-btn" id="themeStudioBtn" type="button" title="Theme studio (T)" aria-label="Open theme studio"><svg class="i"><use href="#i-layers" /></svg></button>
+      <button class="icon-btn" id="settingsBtn" type="button" title="Settings (Ctrl+,)" aria-label="Open settings"><svg class="i"><use href="#i-settings" /></svg></button>
+    </div>
+  </header>
+
+  <!-- ==================================================================
+       Primary navigation
+       ================================================================== -->
+  <nav class="tabbar" id="tabbar" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" data-tab="today" id="tabToday" aria-controls="viewToday" aria-selected="true">
+      <svg class="i"><use href="#i-bolt" /></svg><span>Now</span>
+    </button>
+    <button class="tab" role="tab" data-tab="plan" id="tabPlan" aria-controls="viewPlan" aria-selected="false">
+      <svg class="i"><use href="#i-calendar" /></svg><span>Plan</span>
+    </button>
+    <button class="tab" role="tab" data-tab="routines" id="tabRoutines" aria-controls="viewRoutines" aria-selected="false">
+      <svg class="i"><use href="#i-list" /></svg><span>Routines</span>
+      <em class="tab-badge" id="routineTabBadge" hidden>0</em>
+    </button>
+    <button class="tab" role="tab" data-tab="focus" id="tabFocus" aria-controls="viewFocus" aria-selected="false">
+      <svg class="i"><use href="#i-clock" /></svg><span>Focus</span>
+      <em class="tab-badge" id="focusTabBadge" hidden>0:00</em>
+    </button>
+    <button class="tab" role="tab" data-tab="insights" id="tabInsights" aria-controls="viewInsights" aria-selected="false">
+      <svg class="i"><use href="#i-chart" /></svg><span>Insights</span>
+    </button>
+    <button class="tab" role="tab" data-tab="library" id="tabLibrary" aria-controls="viewLibrary" aria-selected="false">
+      <svg class="i"><use href="#i-layers" /></svg><span>Library</span>
+    </button>
+  </nav>
+
+  <main class="workspace" id="workspace">
+
+    <!-- ================================================================
+         VIEW: NOW
+         ================================================================ -->
+    <section class="view" id="viewToday" role="tabpanel" aria-labelledby="tabToday">
+      <div class="now-grid">
+        <article class="now-card" id="nowCard">
+          <header class="now-head">
+            <span class="eyebrow"><span class="live-dot" id="liveDot"></span> <span id="nowKicker">Up next</span></span>
+            <div class="now-head-actions">
+              <button class="chip chip-ghost" id="nowQueueBtn" type="button" title="Show the ranked queue">
+                <svg class="i"><use href="#i-list" /></svg> <span id="queueCount">queue</span>
+              </button>
+              <button class="icon-btn icon-btn-sm" id="moreNowBtn" type="button" title="More actions" aria-label="More actions"><svg class="i"><use href="#i-more" /></svg></button>
+            </div>
+          </header>
+
+          <div class="now-body">
+            <div class="now-copy">
+              <div class="now-chips" id="nowChips"></div>
+              <h2 class="now-title" id="nowTitle">Nothing scheduled</h2>
+              <p class="now-notes" id="nowNotes" hidden></p>
+              <p class="now-sub" id="nowSub">Add a task below and the timer will be ready.</p>
+
+              <div class="now-actions">
+                <button class="btn btn-primary" id="startTimerBtn" type="button">
+                  <svg class="i"><use href="#i-play" /></svg> <span id="startTimerLabel">Start</span>
+                </button>
+                <button class="btn" id="doneBtn" type="button"><svg class="i"><use href="#i-check" /></svg> Complete</button>
+                <button class="btn btn-quiet" id="skipBtn" type="button"><svg class="i"><use href="#i-skip" /></svg> Move to end</button>
+                <button class="btn btn-quiet" id="editNowBtn" type="button"><svg class="i"><use href="#i-pen" /></svg> Edit</button>
+              </div>
+            </div>
+
+            <div class="now-ring" id="nowRing">
+              <svg viewBox="0 0 200 200" class="ring-svg" role="img" aria-label="Time remaining">
+                <defs>
+                  <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="var(--accent)" />
+                    <stop offset="100%" stop-color="var(--accent-2)" />
+                  </linearGradient>
+                </defs>
+                <circle class="ring-track" cx="100" cy="100" r="86" />
+                <circle class="ring-session" cx="100" cy="100" r="72" id="ringSession" />
+                <circle class="ring-progress" cx="100" cy="100" r="86" id="ringProgress" />
+              </svg>
+              <div class="ring-center">
+                <strong id="ringTime">--</strong>
+                <small id="ringSub">remaining</small>
+                <em class="ring-phase" id="ringPhase" hidden>focus 1/4</em>
+              </div>
+              <button class="ring-tap" id="ringTap" type="button" aria-label="Start or pause the timer"></button>
+            </div>
+          </div>
+
+          <div class="now-meter" id="nowMeter">
+            <div class="meter-row">
+              <span class="meter-label">Task progress</span>
+              <span class="meter-value" id="nowTaskProgress">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="nowTaskFill"></div></div>
+          </div>
+        </article>
+
+        <aside class="today-side">
+          <section class="panel day-summary" id="daySummary">
+            <header class="panel-head">
+              <h3>Today at a glance</h3>
+              <span class="pill" id="capacityPill">capacity</span>
+            </header>
+            <div class="metric-grid">
+              <div class="metric"><span class="metric-value" id="metricDone">0</span><span class="metric-label">done</span></div>
+              <div class="metric"><span class="metric-value" id="metricOpen">0</span><span class="metric-label">open</span></div>
+              <div class="metric"><span class="metric-value" id="metricFocus">0m</span><span class="metric-label">focused</span></div>
+              <div class="metric"><span class="metric-value" id="metricStretch">0m</span><span class="metric-label">breaks</span></div>
+            </div>
+            <div class="stacked-bar" id="dayStacked" role="img" aria-label="Completed, remaining and over-capacity time">
+              <span class="stack stack-done" id="stackDone"></span>
+              <span class="stack stack-left" id="stackLeft"></span>
+              <span class="stack stack-over" id="stackOver"></span>
+            </div>
+            <p class="panel-note" id="capacityNote">No capacity configured.</p>
+            <div class="goal-row">
+              <span class="goal-label">Focus goal</span>
+              <div class="progress-track progress-track-slim"><div class="progress-fill progress-fill-goal" id="goalFill"></div></div>
+              <span class="goal-value" id="goalText">0 / 4h</span>
+            </div>
+          </section>
+
+          <section class="panel" id="upNextPanel">
+            <header class="panel-head">
+              <h3>Up next</h3>
+              <button class="link-btn" id="expandQueueBtn" type="button">Ranked queue</button>
+            </header>
+            <ol class="upnext-list" id="upNextList"></ol>
+          </section>
+
+          <section class="panel" id="remindersPanel" hidden>
+            <header class="panel-head"><h3>Reminders due</h3></header>
+            <ul class="reminder-list" id="reminderList"></ul>
+          </section>
+        </aside>
+      </div>
+
+      <section class="panel quickadd-panel" id="quickAddPanel">
+        <form class="quickadd" id="quickAddForm" autocomplete="off">
+          <label class="sr-only" for="quickAddInput">Quick add a task</label>
+          <div class="quickadd-field">
+            <svg class="i quickadd-icon"><use href="#i-plus" /></svg>
+            <input id="quickAddInput" type="text" placeholder="Deep work #w 90m @09:30 !! +outline  —  press Enter" spellcheck="false" />
+            <button class="btn btn-primary btn-sm" id="quickAddSubmit" type="submit">Add</button>
+          </div>
+          <div class="quickadd-preview" id="quickAddPreview" aria-live="polite"></div>
+          <div class="quickadd-foot">
+            <span class="quickadd-hint" id="quickAddHint">
+              <code>#tag</code> or an alias · <code>@9:30</code> schedule · <code>!</code> priority · <code>~90m</code> estimate · <code>+step</code> subtask · <code>*daily</code> repeat
+            </span>
+            <button class="link-btn" id="openBulkBtn" type="button">Paste many lines</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel list-panel">
+        <header class="panel-head">
+          <div>
+            <span class="eyebrow">Today</span>
+            <h3 id="taskListTitle">Tasks</h3>
+          </div>
+          <div class="panel-tools">
+            <button class="chip" id="sortBtn" type="button" title="Cycle sort order">
+              <svg class="i"><use href="#i-list" /></svg> <span id="sortLabel">manual</span>
+            </button>
+            <button class="chip" id="toggleDoneBtn" type="button" title="Show or hide finished tasks">
+              <svg class="i"><use href="#i-eye" /></svg> <span id="toggleDoneLabel">hide done</span>
+            </button>
+            <button class="chip chip-danger" id="purgeDoneBtn" type="button" title="Archive finished tasks">
+              <svg class="i"><use href="#i-trash" /></svg> Clean up
+            </button>
+          </div>
+        </header>
+        <div class="task-list" id="taskList"></div>
+        <div class="empty-state" id="emptyState" hidden>
+          <svg class="i"><use href="#i-sparkles" /></svg>
+          <h4>No tasks for this day</h4>
+          <p>Type a line above, apply a template, or paste a whole plan at once.</p>
+          <div class="empty-actions">
+            <button class="btn btn-primary btn-sm" data-action="open-bulk" type="button">Paste lines</button>
+            <button class="btn btn-quiet btn-sm" data-action="open-templates" type="button">Use a template</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ================================================================
+         VIEW: PLAN
+         ================================================================ -->
+    <section class="view" id="viewPlan" role="tabpanel" aria-labelledby="tabPlan" hidden>
+      <section class="panel plan-toolbar">
+        <div class="toolbar-row">
+          <div class="field inline">
+            <label for="viewModeSelect">Range</label>
+            <select id="viewModeSelect">
+              <option value="today">Today</option>
+              <option value="tomorrow">Tomorrow</option>
+              <option value="3days">Next 3 days</option>
+              <option value="week">This week</option>
+              <option value="custom">Custom…</option>
+              <option value="all">Everything</option>
+            </select>
+          </div>
+          <div class="field inline" id="customDaysField" hidden>
+            <label for="customDaysInput">Days</label>
+            <input type="number" id="customDaysInput" min="1" max="60" value="4" />
+          </div>
+          <div class="field inline">
+            <label for="sortModeSelect">Sort</label>
+            <select id="sortModeSelect">
+              <option value="manual">Manual order</option>
+              <option value="priority">Priority first</option>
+              <option value="duration">Shortest first</option>
+              <option value="duration_desc">Longest first</option>
+              <option value="alpha">A → Z</option>
+              <option value="created">Newest first</option>
+            </select>
+          </div>
+          <div class="field inline">
+            <label for="groupModeSelect">Group</label>
+            <select id="groupModeSelect">
+              <option value="day">By day</option>
+              <option value="tag">By tag</option>
+              <option value="priority">By priority</option>
+              <option value="none">No grouping</option>
+            </select>
+          </div>
+          <div class="field inline">
+            <label for="carrySelect">Finish day</label>
+            <select id="carrySelect">
+              <option value="always">carry open tasks</option>
+              <option value="ask">ask each time</option>
+              <option value="never">leave them behind</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar-row toolbar-row-actions">
+          <button class="btn btn-primary" id="finishDayBtn" type="button">
+            Finish day <svg class="i"><use href="#i-arrow-right" /></svg>
+          </button>
+          <button class="btn btn-quiet" id="reopenDayBtn" type="button"><svg class="i"><use href="#i-undo" /></svg> Reopen day</button>
+          <button class="btn btn-quiet" id="addDayBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> Insert day</button>
+          <button class="btn btn-quiet" id="startFocusBtn" type="button"><svg class="i"><use href="#i-target" /></svg> Start focus session</button>
+          <span class="toolbar-spacer"></span>
+          <span class="pill pill-layout" id="layoutPill">layout: agenda</span>
+        </div>
+      </section>
+
+      <section class="bulk-panel" id="bulkPanel" hidden>
+        <header class="panel-head">
+          <div><span class="eyebrow">Bulk composer</span><h3>Paste or type many lines</h3></div>
+          <div class="panel-tools">
+            <div class="field inline">
+              <label for="bulkDaySelect">Schedule for</label>
+              <select id="bulkDaySelect"></select>
+            </div>
+            <button class="icon-btn" id="closeBulkBtn" type="button" aria-label="Close bulk composer"><svg class="i"><use href="#i-x" /></svg></button>
+          </div>
+        </header>
+        <textarea id="bulkTextarea" rows="7" spellcheck="false"
+          placeholder="One task per line. Indent or start with &quot;-&quot; to attach a subtask.
+Deep work #w 90m @09:30 !!
+  outline the report
+  write section 1
+Laundry #h 40m *weekly
+Gym #he 1h !"></textarea>
+        <div class="bulk-foot">
+          <div class="bulk-preview" id="bulkPreview" aria-live="polite"></div>
+          <div class="bulk-actions">
+            <span class="form-error" id="bulkError"></span>
+            <button class="btn btn-quiet btn-sm" id="bulkExampleBtn" type="button">Insert example</button>
+            <button class="btn btn-primary btn-sm" id="bulkSubmitBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> Add to timeline</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel timeline-panel">
+        <header class="panel-head">
+          <div><span class="eyebrow">Timeline</span><h3>Your plan</h3></div>
+          <div class="panel-tools">
+            <span class="legend"><i class="legend-dot legend-dot-done"></i> done</span>
+            <span class="legend"><i class="legend-dot legend-dot-left"></i> remaining</span>
+            <span class="legend" id="dragLegend"><i class="legend-dot legend-dot-drag"></i> drag to prioritise</span>
+          </div>
+        </header>
+        <div class="timeline" id="timeline">
+          <div class="timeline-inner" id="timelineInner"></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ================================================================
+         VIEW: ROUTINES
+         ================================================================ -->
+    <section class="view routines-view" id="viewRoutines" role="tabpanel" aria-labelledby="tabRoutines" hidden>
+      <header class="routines-page-header">
+        <div>
+          <span class="eyebrow">Guided routines</span>
+          <h1>Make a little sequence. Follow it one step at a time.</h1>
+          <p>Save repeatable routines, set a duration for each step, then let the runner keep your place.</p>
+        </div>
+        <div class="routines-page-actions">
+          <button class="btn btn-quiet" id="starterRoutineBtn" type="button"><svg class="i"><use href="#i-sparkles" /></svg> Try a starter</button>
+          <button class="btn btn-primary" id="createRoutineBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> New routine</button>
+        </div>
+      </header>
+
+      <section class="routine-runner-panel" id="routineRunnerPanel" aria-live="polite"></section>
+
+      <div class="routine-library-grid">
+        <section class="panel routine-library-panel">
+          <header class="panel-head">
+            <div><span class="eyebrow">Your library</span><h2>Saved routines</h2></div>
+            <span class="pill" id="routineCountPill">0 routines</span>
+          </header>
+          <div class="routine-list" id="routineList"></div>
+        </section>
+        <section class="panel routine-history-panel">
+          <header class="panel-head">
+            <div><span class="eyebrow">Recent practice</span><h2>Run history</h2></div>
+            <span class="pill" id="routineHistoryCount">0</span>
+          </header>
+          <div class="routine-run-history" id="routineRunHistory"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         VIEW: FOCUS
+         ================================================================ -->
+    <section class="view" id="viewFocus" role="tabpanel" aria-labelledby="tabFocus" hidden>
+      <div class="focus-grid">
+        <article class="panel focus-stage" id="focusStage">
+          <header class="panel-head">
+            <div><span class="eyebrow">Focus engine</span><h3 id="focusPhaseLabel">Focus session</h3></div>
+            <div class="focus-preset">
+              <button class="chip" data-preset="classic" type="button">25 / 5</button>
+              <button class="chip" data-preset="deep" type="button">50 / 10</button>
+              <button class="chip" data-preset="sprint" type="button">15 / 3</button>
+              <button class="chip" data-preset="custom" type="button">custom</button>
+            </div>
+          </header>
+
+          <div class="focus-body">
+            <div class="focus-ring-wrap">
+              <svg viewBox="0 0 240 240" class="focus-ring" role="img" aria-label="Focus timer">
+                <circle class="ring-track" cx="120" cy="120" r="104" />
+                <circle class="ring-progress ring-progress-lg" cx="120" cy="120" r="104" id="focusRing" />
+                <circle class="ring-dot" cx="120" cy="16" r="5" id="focusDot" />
+              </svg>
+              <div class="focus-center">
+                <strong id="focusTime">25:00</strong>
+                <small id="focusMode">idle</small>
+                <div class="cycle-dots" id="cycleDots" role="img" aria-label="Pomodoro cycle"></div>
+              </div>
+            </div>
+
+            <div class="focus-side">
+              <div class="focus-task-card" id="focusTaskCard">
+                <span class="eyebrow">Working on</span>
+                <h4 id="focusTaskTitle">No task selected</h4>
+                <p id="focusTaskMeta">Pick a task from the queue to begin.</p>
+                <div class="progress-track"><div class="progress-fill" id="focusTaskFill"></div></div>
+                <div class="focus-task-actions">
+                  <button class="btn btn-sm btn-quiet" id="focusPickTask" type="button">Choose task</button>
+                  <button class="btn btn-sm btn-quiet" id="focusDoneBtn" type="button"><svg class="i"><use href="#i-check" /></svg> Done</button>
+                </div>
+              </div>
+
+              <div class="focus-controls">
+                <button class="btn btn-primary btn-lg" id="focusStartBtn" type="button"><svg class="i"><use href="#i-play" /></svg> Start focus</button>
+                <button class="btn btn-lg" id="focusPauseBtn" type="button" hidden><svg class="i"><use href="#i-pause" /></svg> Pause</button>
+                <button class="btn btn-lg btn-quiet" id="focusBreakBtn" type="button"><svg class="i"><use href="#i-coffee" /></svg> Break</button>
+                <button class="btn btn-lg btn-quiet" id="focusStopBtn" type="button"><svg class="i"><use href="#i-stop" /></svg> Log &amp; stop</button>
+              </div>
+
+              <ul class="focus-facts">
+                <li><span>Today focused</span><strong id="focusFactToday">0m</strong></li>
+                <li><span>Sessions logged</span><strong id="focusFactSessions">0</strong></li>
+                <li><span>Longest stretch</span><strong id="focusFactLongest">0m</strong></li>
+                <li><span>Pomodoros</span><strong id="focusFactPomos">0</strong></li>
+                <li><span>Idle auto-pause</span><strong id="focusFactIdle">on</strong></li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <aside class="focus-aside">
+          <section class="panel">
+            <header class="panel-head"><h3>Ranked queue</h3><span class="pill" id="queuePill">0 ready</span></header>
+            <ol class="queue-list" id="focusQueue"></ol>
+          </section>
+          <section class="panel">
+            <header class="panel-head"><h3>Session log</h3><button class="link-btn" id="clearSessionsBtn" type="button">refresh</button></header>
+            <ul class="session-list" id="sessionList"></ul>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         VIEW: INSIGHTS
+         ================================================================ -->
+    <section class="view" id="viewInsights" role="tabpanel" aria-labelledby="tabInsights" hidden>
+      <section class="panel insight-toolbar" aria-label="Analytics controls">
+        <div><span class="eyebrow">Analytics</span><h2>Work patterns, clearly explained</h2></div>
+        <div class="field inline">
+          <label for="insightRangeSelect">Reporting period</label>
+          <select id="insightRangeSelect">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">Last 12 months</option>
+            <option value="0">All history</option>
+          </select>
+        </div>
+      </section>
+      <div class="analytics-summary" id="analyticsSummary" aria-live="polite"></div>
+      <div class="insight-cards" id="insightCards"></div>
+
+      <div class="insight-grid">
+        <section class="panel">
+          <header class="panel-head"><h3>Virtual-day heatmap</h3><span class="pill" id="heatmapPill">12 weeks</span></header>
+          <div class="heatmap" id="heatmap" role="img" aria-label="Completed tasks per virtual day"></div>
+          <div class="heatmap-legend"><span>less</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>more</span></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h3>Completed time per day</h3><span class="pill" id="velocityPill">velocity</span></header>
+          <div class="bar-chart" id="barChart"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h3>Where the time goes</h3><span class="pill" id="tagSplitPill">by tag</span></header>
+          <div class="tag-split" id="tagSplit"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h3>When you focus</h3><span class="pill">hour of day</span></header>
+          <div class="hour-chart" id="hourChart"></div>
+          <div class="hour-axis"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h3>Focus by weekday</h3><span class="pill">weekly rhythm</span></header>
+          <div class="weekday-chart" id="weekdayChart"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h3>Streaks &amp; milestones</h3></header>
+          <div class="streak-grid" id="streakGrid"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h3>Level</h3><span class="pill" id="levelPill">xp</span></header>
+          <div class="level-card" id="levelCard"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h3>Day journal</h3><span class="pill">notes &amp; mood</span></header>
+          <form class="journal-form" id="journalForm">
+            <div class="field inline">
+              <label for="journalMood">Mood</label>
+              <select id="journalMood">
+                <option value="">—</option>
+                <option value="great">🙌 great</option>
+                <option value="good">🙂 good</option>
+                <option value="ok">😐 ok</option>
+                <option value="rough">😕 rough</option>
+                <option value="awful">😩 awful</option>
+              </select>
+            </div>
+            <input type="text" id="journalNote" placeholder="One line about this day…" />
+            <button class="btn btn-sm btn-primary" type="submit">Save</button>
+          </form>
+          <ul class="journal-list" id="journalList"></ul>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h3>Activity</h3><span class="pill">recent changes</span></header>
+          <ul class="activity-list" id="activityList"></ul>
+        </section>
+      </div>
+      <section class="panel historical-days-panel">
+        <header class="panel-head"><div><span class="eyebrow">Editable history</span><h3>Historical days</h3></div><span class="pill" id="historyDayCount">—</span></header>
+        <p class="panel-note">Historical tasks, elapsed time, focus sessions and journal entries remain editable. Select a day to review its records.</p>
+        <div class="historical-day-list" id="historicalDayList"></div>
+      </section>
+    </section>
+
+    <!-- ================================================================
+         VIEW: LIBRARY (templates, recurring, tags, aliases, backup)
+         ================================================================ -->
+    <section class="view" id="viewLibrary" role="tabpanel" aria-labelledby="tabLibrary" hidden>
+      <div class="library-grid">
+        <section class="panel">
+          <header class="panel-head">
+            <div><span class="eyebrow">Reusable sets</span><h3>Templates</h3></div>
+            <button class="chip" id="saveDayTemplateBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> Save today as template</button>
+          </header>
+          <div class="template-list" id="templateList"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head">
+            <div><span class="eyebrow">Repeats itself</span><h3>Recurring tasks</h3></div>
+            <button class="chip" id="addRecurrenceBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> New rule</button>
+          </header>
+          <div class="recurrence-list" id="recurrenceList"></div>
+          <p class="panel-note">Rules materialise into real tasks whenever the timeline reaches them.</p>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head">
+            <div><span class="eyebrow">Vocabulary</span><h3>Tags &amp; aliases</h3></div>
+            <button class="chip" id="addTagBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> New tag</button>
+          </header>
+          <p class="panel-note">Aliases make typing fast: <code>#t</code> can mean <code>#tracked</code>. Aliases are matched case-insensitively anywhere a tag can be typed.</p>
+          <div class="tag-table" id="tagTable"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><div><span class="eyebrow">Safety</span><h3>Data &amp; backup</h3></div></header>
+          <div class="data-actions">
+            <button class="btn btn-sm" id="exportBtn" type="button"><svg class="i"><use href="#i-download" /></svg> Export backup</button>
+            <label class="btn btn-sm btn-quiet file-btn">
+              <svg class="i"><use href="#i-upload" /></svg> Import backup
+              <input type="file" id="importFile" accept="application/json" hidden />
+            </label>
+            <button class="btn btn-sm btn-quiet" id="legacyImportBtn" type="button" {{ 'disabled' if not legacy else '' }}>
+              <svg class="i"><use href="#i-inbox" /></svg> Adopt V0.1 data
+            </button>
+            <button class="btn btn-sm btn-quiet" id="exportCsvBtn" type="button"><svg class="i"><use href="#i-download" /></svg> Export CSV</button>
+          </div>
+          <div class="cleanup-row">
+            <button class="btn btn-sm btn-quiet" id="cleanupEventsBtn" type="button">Trim history</button>
+            <button class="btn btn-sm btn-danger" id="resetTasksBtn" type="button">Delete all tasks</button>
+            <button class="btn btn-sm btn-danger" id="factoryResetBtn" type="button">Factory reset</button>
+          </div>
+          <p class="panel-note" id="storageNote"></p>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><div><span class="eyebrow">Time machine</span><h3>History</h3></div>
+            <button class="chip" id="clearHistoryBtn" type="button">clear</button>
+          </header>
+          <ul class="history-list" id="historyList"></ul>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><div><span class="eyebrow">About</span><h3>{{ app_name }} <span class="version-tag">v{{ app_version }}</span></h3></div></header>
+          <p class="panel-note">{{ app_tagline }} Days are virtual integers — they only advance when you press <strong>Finish day</strong>.</p>
+          <div class="about-links">
+            <button class="link-btn" id="aboutHelp" type="button">Keyboard shortcuts</button>
+            <button class="link-btn" id="aboutThemes" type="button">Theme studio</button>
+            <button class="link-btn" id="aboutSettings" type="button">All settings</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================================================================
+       Mobile bottom navigation (visible under 900px)
+       ================================================================== -->
+  <nav class="mobile-nav" id="mobileNav" aria-label="Primary">
+    <button class="mobile-tab is-active" data-tab="today" type="button"><svg class="i"><use href="#i-bolt" /></svg><span>Now</span></button>
+    <button class="mobile-tab" data-tab="plan" type="button"><svg class="i"><use href="#i-calendar" /></svg><span>Plan</span></button>
+    <button class="mobile-tab" data-tab="routines" type="button"><svg class="i"><use href="#i-list" /></svg><span>Routine</span></button>
+    <button class="mobile-tab mobile-tab-add" data-action="quick-add" type="button" aria-label="Quick add"><svg class="i"><use href="#i-plus" /></svg></button>
+    <button class="mobile-tab" data-tab="focus" type="button"><svg class="i"><use href="#i-clock" /></svg><span>Focus</span></button>
+    <button class="mobile-tab" data-tab="insights" type="button"><svg class="i"><use href="#i-chart" /></svg><span>Stats</span></button>
+    <button class="mobile-tab" data-tab="library" type="button"><svg class="i"><use href="#i-layers" /></svg><span>More</span></button>
+  </nav>
+
+  <div class="scrim" id="scrim" hidden></div>
+</div>
+
+<!-- ======================================================================
+     Sheet: theme studio
+     ====================================================================== -->
+<div class="sheet" id="themeSheet" role="dialog" aria-modal="true" aria-labelledby="themeSheetTitle" hidden>
+  <div class="sheet-panel">
+    <header class="sheet-head">
+      <div><span class="eyebrow">Appearance</span><h2 id="themeSheetTitle">Theme studio</h2></div>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="sheet-body">
+      <section class="setting-block">
+        <h3 class="block-title">Five colour palettes</h3>
+        <p class="block-note">Choose a palette and light or dark scheme. The theme changes appearance only; your selected design stays independent.</p>
+        <div class="theme-gallery" id="themeGallery" role="radiogroup" aria-label="Colour theme"></div>
+      </section>
+
+      <section class="setting-block">
+        <h3 class="block-title">Colour scheme</h3>
+        <p class="block-note">Every theme ships a light and a dark variant, so “dark theme friendly” holds for all five.</p>
+        <div class="segmented" id="schemeControl" role="radiogroup" aria-label="Colour scheme">
+          <button data-scheme="auto" type="button" role="radio">Auto</button>
+          <button data-scheme="light" type="button" role="radio">Light</button>
+          <button data-scheme="dark" type="button" role="radio">Dark</button>
+        </div>
+      </section>
+
+      <section class="setting-block">
+        <h3 class="block-title">Choose a design</h3>
+        <p class="block-note">Eight practical designs change task hierarchy, spacing and navigation—not only color. All eight adapt to phone screens.</p>
+        <div class="design-gallery" id="layoutGallery" role="radiogroup" aria-label="App layout"></div>
+      </section>
+
+      <details class="advanced-settings appearance-advanced-settings">
+        <summary>Advanced appearance options</summary>
+      <section class="setting-block">
+        <h3 class="block-title">Density</h3>
+        <div class="segmented" id="densityControl" role="radiogroup" aria-label="Density">
+          <button data-density="compact" type="button" role="radio">Compact</button>
+          <button data-density="cozy" type="button" role="radio">Cozy</button>
+          <button data-density="roomy" type="button" role="radio">Roomy</button>
+        </div>
+      </section>
+
+      <section class="setting-block">
+        <h3 class="block-title">Accent</h3>
+        <div class="swatch-row" id="accentRow"></div>
+        <div class="field inline">
+          <label for="accentCustom">Custom</label>
+          <input type="color" id="accentCustom" value="#ff6b4a" />
+          <button class="link-btn" id="accentReset" type="button">reset</button>
+        </div>
+      </section>
+
+      <section class="setting-block">
+        <h3 class="block-title">Fine tuning</h3>
+        <div class="range-row">
+          <label for="radiusRange">Corner radius</label>
+          <input type="range" id="radiusRange" min="0" max="34" step="1" />
+          <output id="radiusOut">16</output>
+        </div>
+        <div class="range-row">
+          <label for="fontRange">Text size</label>
+          <input type="range" id="fontRange" min="80" max="135" step="1" />
+          <output id="fontOut">100%</output>
+        </div>
+        <div class="switch-row">
+          <div><strong>Animations</strong><small>Respects reduced-motion by default</small></div>
+          <button class="switch" id="motionSwitch" type="button" role="switch" aria-checked="true"><span></span></button>
+        </div>
+        <div class="switch-row">
+          <div><strong>Translucency</strong><small>Blur and layered transparency</small></div>
+          <button class="switch" id="transparencySwitch" type="button" role="switch" aria-checked="true"><span></span></button>
+        </div>
+        <div class="switch-row">
+          <div><strong>High contrast</strong><small>Stronger borders and text</small></div>
+          <button class="switch" id="contrastSwitch" type="button" role="switch" aria-checked="false"><span></span></button>
+        </div>
+      </section>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: routine editor
+     ====================================================================== -->
+<div class="sheet" id="routineEditorSheet" role="dialog" aria-modal="true" aria-labelledby="routineEditorTitle" hidden>
+  <div class="sheet-panel sheet-panel-wide routine-editor-panel">
+    <header class="sheet-head">
+      <div><span class="eyebrow">Routine builder</span><h2 id="routineEditorTitle">New routine</h2></div>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="sheet-body routine-editor-body">
+      <form id="routineEditorForm" autocomplete="off">
+        <input id="editRoutineId" type="hidden" />
+        <div class="routine-editor-details">
+          <div class="field routine-name-field">
+            <label for="routineNameInput">Name</label>
+            <input id="routineNameInput" type="text" maxlength="80" placeholder="Morning reset" required />
+          </div>
+          <div class="field routine-emoji-field">
+            <label for="routineEmojiInput">Emoji</label>
+            <input id="routineEmojiInput" type="text" maxlength="8" value="✨" aria-label="Routine emoji" />
+          </div>
+          <div class="field routine-color-field">
+            <label for="routineColorInput">Accent</label>
+            <input id="routineColorInput" type="color" value="#7b8db8" aria-label="Routine accent color" />
+          </div>
+          <div class="field routine-description-field">
+            <label for="routineDescriptionInput">Short description <span class="optional">optional</span></label>
+            <textarea id="routineDescriptionInput" rows="2" maxlength="240" placeholder="A gentle start to the day"></textarea>
+          </div>
+        </div>
+
+        <div class="routine-step-editor-head">
+          <div><h3>Ordered steps</h3><p>Each step needs a title and a duration. Use the arrows to change its order.</p></div>
+          <button class="btn btn-quiet btn-sm" id="addRoutineStepBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> Add step</button>
+        </div>
+        <div class="routine-step-editor" id="routineStepEditor"></div>
+        <p class="form-error routine-editor-error" id="routineEditorError" role="alert"></p>
+        <footer class="routine-editor-footer">
+          <button class="btn btn-quiet" type="button" data-close-sheet>Cancel</button>
+          <button class="btn btn-primary" id="saveRoutineBtn" type="submit">Save routine</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: settings
+     ====================================================================== -->
+<div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="settingsSheetTitle" hidden>
+  <div class="sheet-panel sheet-panel-wide">
+    <header class="sheet-head">
+      <div><span class="eyebrow">Preferences</span><h2 id="settingsSheetTitle">Settings</h2></div>
+      <div class="row settings-head-actions">
+        <button class="chip" id="settingsHelpBtn" type="button"><svg class="i"><use href="#i-help" /></svg> Help &amp; user guide</button>
+        <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+      </div>
+    </header>
+
+    <nav class="sheet-tabs" id="settingsTabs" role="tablist">
+      <button class="sheet-tab is-active" data-pane="behaviour" type="button" role="tab">Behaviour</button>
+      <button class="sheet-tab" data-pane="language" type="button" role="tab">Language &amp; calendar</button>
+      <button class="sheet-tab" data-pane="time" type="button" role="tab">Time &amp; day</button>
+      <button class="sheet-tab" data-pane="focus" type="button" role="tab">Timer</button>
+      <button class="sheet-tab" data-pane="notify" type="button" role="tab">Alerts</button>
+      <button class="sheet-tab" data-pane="sync" type="button" role="tab">Sync</button>
+      <button class="sheet-tab" data-pane="keys" type="button" role="tab">Keys</button>
+    </nav>
+
+    <div class="sheet-body" id="settingsBody">
+      <!-- Language, writing direction and calendar -->
+      <section class="pane" data-pane="language">
+        <div class="setting-block">
+          <h3 class="block-title">Language &amp; calendar</h3>
+          <p class="block-note">Choose English or فارسی. Persian enables a native right-to-left interface, Persian number formatting and the Solar Hijri calendar by default.</p>
+          <div class="field">
+            <label for="languageSelect">Interface language</label>
+            <select id="languageSelect"><option value="en">English</option><option value="fa">فارسی</option></select>
+          </div>
+          <div class="field">
+            <label for="calendarSystemSelect">Calendar system</label>
+            <select id="calendarSystemSelect">
+              <option value="auto">Follow language</option><option value="jalali">Solar Hijri (Jalali / Shamsi)</option><option value="gregorian">Gregorian</option>
+            </select>
+          </div>
+          <details class="advanced-settings">
+            <summary>Advanced calendar and type</summary>
+          <div class="field">
+            <label for="calendarStartDateInput">Date for virtual day 1</label>
+            <input class="numeric" type="text" id="calendarStartDateInput" inputmode="numeric" placeholder="1405/01/01" autocomplete="off" />
+            <small id="calendarStartHint">Use the selected calendar format. Changing this anchor changes labels, not your tasks.</small>
+          </div>
+          <div class="field">
+            <label for="timezoneInput">Time zone</label>
+            <input type="text" id="timezoneInput" placeholder="Asia/Tehran" autocomplete="off" />
+            <small>Used for calendar labels and local scheduling. Leave blank to use this device’s time zone.</small>
+          </div>
+          <div class="field">
+            <label for="persianFontSelect">Persian typeface</label>
+            <select id="persianFontSelect">
+              <option value="vazirmatn">Vazirmatn</option><option value="estedad">Estedad</option><option value="naskh">Noto Naskh Arabic</option><option value="sahel">Sahel</option>
+            </select>
+            <small>All four typefaces are bundled and load locally when selected. No external font service is contacted.</small>
+          </div>
+          <div class="field">
+            <label for="digitStyleSelect">Numerals</label>
+            <select id="digitStyleSelect"><option value="auto">Match language</option><option value="persian">Persian numerals</option><option value="latin">Latin numerals</option></select>
+          </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Behaviour -->
+      <section class="pane is-active" data-pane="behaviour">
+        <div class="field">
+          <label for="greetingInput">Greeting</label>
+          <input type="text" id="greetingInput" placeholder="Make time visible." />
+        </div>
+        <div class="field">
+          <label for="defaultDurationInput">Default task length (minutes)</label>
+          <input type="number" id="defaultDurationInput" min="1" max="720" />
+        </div>
+        <details class="advanced-settings">
+          <summary>Advanced behavior</summary>
+        <div class="switch-row">
+          <div><strong>Auto-complete at zero</strong><small>When a countdown reaches 0:00, mark the task done</small></div>
+          <button class="switch" id="autoDoneSwitch" type="button" role="switch"><span></span></button>
+        </div>
+        <div class="switch-row">
+          <div><strong>Show finished tasks</strong><small>Keep completed work visible in the list</small></div>
+          <button class="switch" id="showDoneSwitch" type="button" role="switch"><span></span></button>
+        </div>
+        <div class="switch-row">
+          <div><strong>Notes inline</strong><small>Preview task notes inside the list</small></div>
+          <button class="switch" id="notesInlineSwitch" type="button" role="switch"><span></span></button>
+        </div>
+        <div class="switch-row">
+          <div><strong>Compact metadata</strong><small>Hide secondary details on task rows</small></div>
+          <button class="switch" id="compactMetaSwitch" type="button" role="switch"><span></span></button>
+        </div>
+        <div class="switch-row">
+          <div><strong>Confirm destructive actions</strong><small>Ask before deleting or resetting</small></div>
+          <button class="switch" id="confirmSwitch" type="button" role="switch"><span></span></button>
+        </div>
+        <div class="field">
+          <label for="wipInput">Work-in-progress limit</label>
+          <input type="number" id="wipInput" min="1" max="25" />
+          <small>Warn when more than this many tasks are open in one day.</small>
+        </div>
+        <div class="field">
+          <label for="undoLimitInput">Undo depth</label>
+          <input type="number" id="undoLimitInput" min="5" max="200" />
+        </div>
+        </details>
+      </section>
+
+      <!-- Time & day -->
+      <section class="pane" data-pane="time">
+        <div class="field">
+          <label for="capacityInput">Daily capacity (minutes)</label>
+          <input type="number" id="capacityInput" min="0" max="1440" step="15" />
+        </div>
+        <div class="field">
+          <label for="goalInput">Daily focus goal (minutes)</label>
+          <input type="number" id="goalInput" min="0" max="1440" step="15" />
+        </div>
+        <details class="advanced-settings">
+          <summary>Advanced time and day rules</summary>
+          <div class="field">
+            <label for="dayStartInput">Day rollover hour</label>
+            <input type="number" id="dayStartInput" min="0" max="12" />
+            <small>Times before this hour count as the previous day.</small>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="workdayStartInput">Workday starts</label><input type="time" id="workdayStartInput" /></div>
+            <div class="field"><label for="workdayEndInput">Workday ends</label><input type="time" id="workdayEndInput" /></div>
+          </div>
+          <div class="field">
+            <label for="timeFormatSelect">Duration display</label>
+            <select id="timeFormatSelect">
+              <option value="hm">1h 30m</option>
+              <option value="clock">90:00</option>
+              <option value="decimal">1.5h</option>
+              <option value="minutes">90m</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="weekStartSelect">Week starts on</label>
+            <select id="weekStartSelect">
+              <option value="1">Monday</option>
+              <option value="0">Sunday</option>
+              <option value="6">Saturday</option>
+            </select>
+          </div>
+        </details>
+      </section>
+
+      <!-- Timer -->
+      <section class="pane" data-pane="focus">
+        <div class="field-row">
+          <div class="field"><label for="pomoFocusInput">Focus (min)</label><input type="number" id="pomoFocusInput" min="1" max="180" /></div>
+          <div class="field"><label for="pomoBreakInput">Short break (min)</label><input type="number" id="pomoBreakInput" min="1" max="60" /></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="pomoLongInput">Long break (min)</label><input type="number" id="pomoLongInput" min="1" max="120" /></div>
+          <div class="field"><label for="pomoCyclesInput">Cycles before long break</label><input type="number" id="pomoCyclesInput" min="1" max="12" /></div>
+        </div>
+        <div class="switch-row">
+          <div><strong>Auto-start next phase</strong><small>Roll straight from focus into a break</small></div>
+          <button class="switch" id="pomoAutoSwitch" type="button" role="switch"><span></span></button>
+        </div>
+        <div class="field">
+          <label for="countModeSelect">Countdown runs</label>
+          <select id="countModeSelect">
+            <option value="focus">only during a focus session</option>
+            <option value="always">whenever the page is open</option>
+            <option value="off">only when I press start</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="idleInput">Auto-pause after idle (seconds)</label>
+          <input type="number" id="idleInput" min="30" max="3600" step="30" />
+        </div>
+        <div class="switch-row">
+          <div><strong>Chime at phase end</strong><small>Generated tone, no audio files needed</small></div>
+          <button class="switch" id="soundSwitch" type="button" role="switch"><span></span></button>
+        </div>
+        <div class="range-row">
+          <label for="volumeRange">Volume</label>
+          <input type="range" id="volumeRange" min="0" max="100" step="5" />
+          <output id="volumeOut">50%</output>
+        </div>
+        <details class="advanced-settings routine-advanced-settings">
+          <summary>Advanced routine runner</summary>
+          <p class="block-note">Five optional controls tune the step runner. These settings do not change your saved routines.</p>
+          <div class="switch-row">
+            <div><strong>Auto-advance timed steps</strong><small>When the countdown reaches zero, complete this step and begin the next one.</small></div>
+            <button class="switch" id="routineAutoAdvanceSwitch" type="button" role="switch" aria-checked="true"><span></span></button>
+          </div>
+          <div class="switch-row">
+            <div><strong>Play a step chime</strong><small>Use a short, locally generated tone when a step changes.</small></div>
+            <button class="switch" id="routineSoundSwitch" type="button" role="switch" aria-checked="true"><span></span></button>
+          </div>
+          <div class="switch-row">
+            <div><strong>Vibrate on step change</strong><small>Give a brief haptic cue on supported phones and browsers.</small></div>
+            <button class="switch" id="routineVibrateSwitch" type="button" role="switch" aria-checked="false"><span></span></button>
+          </div>
+          <div class="switch-row">
+            <div><strong>Keep the screen awake</strong><small>Request the browser’s screen wake lock while a routine is running; may use more battery.</small></div>
+            <button class="switch" id="routineKeepAwakeSwitch" type="button" role="switch" aria-checked="false"><span></span></button>
+          </div>
+          <div class="switch-row">
+            <div><strong>Show the next step</strong><small>Preview what follows the current step so you can prepare.</small></div>
+            <button class="switch" id="routineShowNextSwitch" type="button" role="switch" aria-checked="true"><span></span></button>
+          </div>
+        </details>
+      </section>
+
+      <!-- Alerts -->
+      <section class="pane" data-pane="notify">
+        <div class="switch-row">
+          <div><strong>Browser notifications</strong><small>Requires permission from your browser</small></div>
+          <button class="switch" id="notifySwitch" type="button" role="switch"><span></span></button>
+        </div>
+        <div class="field">
+          <label for="reminderLeadInput">Remind me before a scheduled task (minutes)</label>
+          <input type="number" id="reminderLeadInput" min="0" max="120" />
+        </div>
+        <div class="field">
+          <label for="reminderWindowInput">Look-ahead window (minutes)</label>
+          <input type="number" id="reminderWindowInput" min="5" max="1440" step="5" value="60" />
+        </div>
+        <p class="block-note">Reminders appear in the Now view and, if allowed, as system notifications while the app is open.</p>
+      </section>
+
+      <!-- Sync -->
+      <section class="pane" data-pane="sync">
+        <p class="block-note">Most people can leave this section alone. It connects an optional external work/free status service.</p>
+        <details class="advanced-settings">
+          <summary>Advanced connection</summary>
+          <div class="field">
+            <label for="serverUrlInput">External work/free service</label>
+            <div class="field-row-inline">
+              <input type="text" id="serverUrlInput" placeholder="http://127.0.0.1:2230" />
+              <button class="btn btn-sm btn-primary" id="saveServerUrlBtn" type="button">Save</button>
+            </div>
+            <small>Polled every 10 seconds; while the service reports <em>work</em>, countdowns run.</small>
+          </div>
+          <div class="sync-status" id="syncStatus">
+            <span class="pill" id="syncPill">unknown</span>
+            <span id="syncDetail">Not configured</span>
+          </div>
+        </details>
+      </section>
+
+      <!-- Keys -->
+      <section class="pane" data-pane="keys">
+        <ul class="shortcut-list" id="shortcutList"></ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: task editor
+     ====================================================================== -->
+<div class="sheet" id="taskSheet" role="dialog" aria-modal="true" aria-labelledby="taskSheetTitle" hidden>
+  <div class="sheet-panel">
+    <header class="sheet-head">
+      <div><span class="eyebrow" id="taskSheetEyebrow">Task</span><h2 id="taskSheetTitle">Edit task</h2></div>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="sheet-body" id="taskSheetBody">
+      <div class="field">
+        <label for="editTitle">Title</label>
+        <input type="text" id="editTitle" />
+      </div>
+
+      <div class="field">
+        <label for="editNotes">Notes</label>
+        <textarea id="editNotes" rows="2" placeholder="Context, links, next step…"></textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="editTag">Tag</label>
+          <input type="text" id="editTag" list="tagOptions" spellcheck="false" />
+          <datalist id="tagOptions"></datalist>
+        </div>
+        <div class="field">
+          <label for="editDay">Virtual day</label>
+          <input type="number" id="editDay" min="1" />
+          <small id="editDayDateHint"></small>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Priority</label>
+        <div class="segmented" id="priorityControl" role="radiogroup" aria-label="Priority">
+          <button data-priority="0" type="button" role="radio">None</button>
+          <button data-priority="1" type="button" role="radio">Low</button>
+          <button data-priority="2" type="button" role="radio">Medium</button>
+          <button data-priority="3" type="button" role="radio">High</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="editDuration">Duration</label>
+        <div class="field-row-inline">
+          <input type="text" id="editDuration" placeholder="1h30m, 90, 2p" spellcheck="false" />
+          <div class="duration-chips" id="durationChips"></div>
+        </div>
+        <small id="editDurationHint">Elapsed time is preserved when you change the length.</small>
+      </div>
+
+      <div class="field">
+        <label for="editElapsed">Elapsed / gone time</label>
+        <div class="field-row-inline elapsed-editor">
+          <input type="text" id="editElapsed" placeholder="25m, 1h 10m" spellcheck="false" />
+          <button class="btn btn-sm" type="button" data-elapsed-adjust="-300" aria-label="Subtract five minutes">−5m</button>
+          <button class="btn btn-sm" type="button" data-elapsed-adjust="300" aria-label="Add five minutes">+5m</button>
+        </div>
+        <small>Enter how much time has already passed. Adjustments are recorded in the task history.</small>
+      </div>
+
+      <div class="switch-row">
+        <div><strong>Task completed</strong><small>Historical completion status can be corrected at any time.</small></div>
+        <button class="switch" id="editDoneSwitch" type="button" role="switch" aria-checked="false"><span></span></button>
+      </div>
+
+      <div class="field">
+        <label for="editSkippedCount">Times deferred</label>
+        <input type="number" id="editSkippedCount" min="0" max="999" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="editScheduled">Scheduled at</label>
+          <input type="time" id="editScheduled" />
+        </div>
+        <div class="field">
+          <label for="editReminder">Remind me</label>
+          <input type="datetime-local" id="editReminder" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Subtasks</label>
+        <ul class="subtask-list" id="subtaskList"></ul>
+        <div class="field-row-inline">
+          <input type="text" id="newSubtask" placeholder="Add a step…" />
+          <button class="btn btn-sm" id="addSubtaskBtn" type="button"><svg class="i"><use href="#i-plus" /></svg></button>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="editPomos">Estimated pomodoros</label>
+          <input type="number" id="editPomos" min="0" max="40" />
+        </div>
+        <div class="field">
+          <label for="editSameTag">Apply to all tasks with this tag</label>
+          <button class="btn btn-quiet btn-sm" id="applyTagDurationBtn" type="button">Set duration for #tag</button>
+        </div>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="btn btn-danger btn-sm" id="deleteTaskBtn" type="button"><svg class="i"><use href="#i-trash" /></svg> Delete</button>
+        <button class="btn btn-quiet btn-sm" id="duplicateTaskBtn" type="button"><svg class="i"><use href="#i-copy" /></svg> Duplicate</button>
+        <button class="btn btn-quiet btn-sm" id="pinTaskBtn" type="button"><svg class="i"><use href="#i-pin" /></svg> Pin</button>
+        <button class="btn btn-quiet btn-sm" id="recurTaskBtn" type="button"><svg class="i"><use href="#i-repeat" /></svg> Repeat…</button>
+        <span class="sheet-actions-spacer"></span>
+        <button class="btn btn-primary" id="saveTaskBtn" type="button"><svg class="i"><use href="#i-check" /></svg> Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: command palette
+     ====================================================================== -->
+<div class="sheet sheet-top" id="paletteSheet" role="dialog" aria-modal="true" aria-labelledby="paletteInput" hidden>
+  <div class="sheet-panel sheet-panel-palette">
+    <div class="palette-field">
+      <svg class="i"><use href="#i-search" /></svg>
+      <input id="paletteInput" type="text" placeholder="Search tasks, tags, themes or run a command…" spellcheck="false" autocomplete="off" />
+      <kbd>esc</kbd>
+    </div>
+    <ul class="palette-results" id="paletteResults"></ul>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: help / shortcuts
+     ====================================================================== -->
+<div class="sheet" id="helpSheet" role="dialog" aria-modal="true" aria-labelledby="helpSheetTitle" hidden>
+  <div class="sheet-panel">
+    <header class="sheet-head">
+      <div><span class="eyebrow">Cheat sheet</span><h2 id="helpSheetTitle">Keyboard &amp; gestures</h2></div>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="sheet-body">
+      <ul class="shortcut-list" id="helpShortcutList"></ul>
+      <section class="setting-block">
+        <h3 class="block-title">Touch gestures</h3>
+        <ul class="gesture-list">
+          <li><strong>Swipe right</strong> on a task to complete it.</li>
+          <li><strong>Swipe left</strong> on a task to move it to the end of the day.</li>
+          <li><strong>Long press</strong> a task for the action sheet (edit, split, duplicate, delete).</li>
+          <li><strong>Drag the handle</strong> to reorder.</li>
+          <li><strong>Pull down</strong> on the Now view to refresh from the server.</li>
+        </ul>
+      </section>
+      <section class="setting-block">
+        <h3 class="block-title">Quick-add cheat sheet</h3>
+        <ul class="syntax-list" id="syntaxList"></ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: date picker — Gregorian / Solar Hijri
+     ====================================================================== -->
+<div class="sheet" id="calendarSheet" role="dialog" aria-modal="true" aria-labelledby="calendarMonthTitle" hidden>
+  <div class="sheet-panel calendar-panel">
+    <header class="sheet-head calendar-head">
+      <div><span class="eyebrow">Calendar</span><h2 id="calendarMonthTitle">Select a day</h2></div>
+      <div class="calendar-head-actions">
+        <button class="icon-btn" id="calendarTodayBtn" type="button" title="Back to current day" aria-label="Back to current day"><svg class="i"><use href="#i-home" /></svg></button>
+        <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+      </div>
+    </header>
+    <div class="sheet-body calendar-body">
+      <div class="calendar-month-controls">
+        <button class="icon-btn" id="calendarPrevMonth" type="button" aria-label="Previous month"><svg class="i"><use href="#i-arrow-left" /></svg></button>
+        <strong id="calendarVisibleMonth"></strong>
+        <button class="icon-btn" id="calendarNextMonth" type="button" aria-label="Next month"><svg class="i"><use href="#i-arrow-right" /></svg></button>
+      </div>
+      <div class="calendar-weekdays" id="calendarWeekdays"></div>
+      <div class="calendar-grid" id="calendarGrid" role="grid"></div>
+      <div class="field-row-inline calendar-jump-row">
+        <label class="sr-only" for="calendarDateInput">Go to date</label>
+        <input class="numeric" id="calendarDateInput" type="text" inputmode="numeric" placeholder="1405/07/15" autocomplete="off" />
+        <button class="btn btn-primary" id="calendarGoBtn" type="button">Go to date</button>
+      </div>
+      <p class="panel-note" id="calendarAnchorNote"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: edit all records for a selected day
+     ====================================================================== -->
+<div class="sheet" id="historyDaySheet" role="dialog" aria-modal="true" aria-labelledby="historyDayTitle" hidden>
+  <div class="sheet-panel sheet-panel-wide history-day-panel">
+    <header class="sheet-head">
+      <div><span class="eyebrow">Editable history</span><h2 id="historyDayTitle">Historical day</h2><p class="panel-note" id="historyDaySubtitle"></p></div>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="sheet-body history-day-body" id="historyDayBody">
+      <div class="historical-summary" id="historicalSummary"></div>
+      <form class="history-journal-form panel" id="historyDayForm">
+        <header class="panel-head"><h3>Day journal &amp; capacity</h3><span class="pill">editable</span></header>
+        <div class="field-row">
+          <div class="field"><label for="historyMood">Mood</label><select id="historyMood"><option value="">—</option><option value="great">🙌 great</option><option value="good">🙂 good</option><option value="ok">😐 ok</option><option value="rough">😕 rough</option><option value="awful">😩 awful</option></select></div>
+          <div class="field"><label for="historyCapacity">Capacity (minutes)</label><input id="historyCapacity" type="number" min="0" max="1440" step="15" /></div>
+        </div>
+        <div class="field"><label for="historyNote">Day note</label><textarea id="historyNote" rows="2" placeholder="What went well? What would you change?"></textarea></div>
+        <button class="btn btn-primary btn-sm" type="submit">Save day details</button>
+      </form>
+      <section class="history-record-section">
+        <header class="panel-head"><div><span class="eyebrow">Tasks</span><h3>Day tasks</h3></div><button class="btn btn-sm" id="historyAddTaskBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> Add task</button></header>
+        <div class="history-record-list" id="historyTaskList"></div>
+      </section>
+      <section class="history-record-section">
+        <header class="panel-head"><div><span class="eyebrow">Focus records</span><h3>Sessions</h3></div><span class="pill" id="historySessionCount">0</span></header>
+        <div class="history-record-list" id="historySessionList"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: complete user guide
+     ====================================================================== -->
+<div class="sheet" id="guideSheet" role="dialog" aria-modal="true" aria-labelledby="guideSheetTitle" hidden>
+  <div class="sheet-panel sheet-panel-wide">
+    <header class="sheet-head">
+      <div><span class="eyebrow">TaskArcade</span><h2 id="guideSheetTitle">User guide</h2></div>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="sheet-body guide-content">
+      <article class="guide-language" data-guide-lang="en" data-no-translate>
+        <p class="guide-intro">A friendly, practical guide to planning time, running focus sessions, understanding your statistics, and correcting past records.</p>
+        <nav class="guide-toc" aria-label="Guide contents"><a href="#guide-start">Start here</a><a href="#guide-plan">Plan tasks</a><a href="#guide-routines">Routines</a><a href="#guide-focus">Focus timer</a><a href="#guide-insights">Analytics</a><a href="#guide-history">Past records</a><a href="#guide-calendar">Persian calendar</a><a href="#guide-customize">Customize &amp; protect data</a></nav>
+        <section id="guide-start"><h3>1. Start with one day</h3><p>TaskArcade organizes work into numbered virtual days. A day advances only when you choose <strong>Finish day</strong>; moving the day counter is a navigation choice and does not move tasks. The calendar can associate each virtual day with a Gregorian or Solar Hijri date.</p><p>Begin in <strong>Now</strong>. The highlighted task is the next suggested action. Select another task from the list, or add a new one in the quick-add field.</p></section>
+        <section id="guide-plan"><h3>2. Plan tasks and estimate time</h3><p>Write a clear title, choose a useful estimate, and optionally add a tag, priority, clock time, note, repeat rule, or subtasks. The task editor lets you change every field later.</p><p><strong>Quick-add examples</strong> (the syntax is optional; ordinary Persian or English titles work too):</p><ul class="guide-examples"><li><code>Prepare report #work 90m !! @09:30</code> — tag, estimate, priority and scheduled time.</li><li><code>Review notes #study ~2p</code> — estimate two pomodoro cycles.</li><li><code>Walk outside *weekdays +fill bottle</code> — repeat on workdays and add a subtask.</li><li><code>Plan the trip &gt;compare train times ^</code> — save a note and pin the task.</li></ul><p><code>#t</code> can be an alias for <code>#tracked</code>. Manage tags and aliases in <strong>Library → Tags &amp; aliases</strong>. Aliases are customizable; they do not change the saved task title.</p><p>Priority markers are <code>!</code> low, <code>!!</code> medium and <code>!!!</code> high. A bare duration at the end of the line is also understood, such as <code>Read 25m</code>. Farsi digits and duration words such as «۹۰ دقیقه» and «۱ ساعت» are accepted.</p></section>
+        <section id="guide-routines"><h3>3. Build and run routines</h3><p>Open <strong>Routines</strong>, create a routine, and add ordered steps with a duration, optional note and emoji. Use the arrow controls to reorder steps. You can edit a saved routine later; an active run keeps the step snapshot it started with.</p><p>Start a routine to open the guided runner. It shows the current step, live countdown, next step, total remaining time and overall progress. Pause or resume, complete or skip a step, or stop the run. Completed and stopped attempts remain in run history. The five optional runner controls are under <strong>Settings → Timer → Advanced routine runner</strong>; they control auto-advance, a locally generated chime, supported-device vibration, screen wake lock, and the next-step preview.</p><p>On first use, select <strong>Try a starter</strong> to add and begin an editable morning sequence. The runner is designed for phones as well as desktop screens.</p></section>
+        <section id="guide-focus"><h3>4. Use the focus timer</h3><p>Open <strong>Focus</strong>, select a task, and start a focus interval. The classic, deep-work and sprint presets can be adjusted in Settings. Pausing, resuming and stopping a session are safe; completed work is recorded in the session log.</p><p>Task duration is an estimate. The task editor shows both the planned duration and the time already elapsed. Change the elapsed value directly, or use the five-minute adjustment buttons. Changing the estimate preserves elapsed progress unless you explicitly edit it.</p></section>
+        <section id="guide-insights"><h3>5. Read the analytics</h3><p>Choose a 7-day, 30-day, 90-day, annual or all-history reporting period. Cards summarize completion, focused time, time-estimate accuracy, goal days, session consistency and change versus the previous period. Charts show daily activity, focus patterns, tags and streaks.</p><p>Planned task time and actual focus-session time are different measures. A blank day in the daily series is intentional: it prevents averages from ignoring quiet days. Select a chart mark or a row under <strong>Historical days</strong> to open the full day record.</p></section>
+        <section id="guide-history"><h3>6. Correct a past day</h3><p>Past records are not read-only. In Analytics, choose a day to edit its journal, mood and capacity; add a task; edit task details, completion, estimate, elapsed time, tag, priority and subtasks; or correct, move, or remove a focus session. Changes recalculate the relevant analytics and are included in undo history.</p><p>Aggregate totals are derived from tasks and focus sessions. Edit the source records rather than typing over a computed total; the dashboard will update from those source records.</p></section>
+        <section id="guide-calendar"><h3>7. Gregorian and Solar Hijri dates</h3><p>Choose English, Persian, or a calendar independently in <strong>Settings → Language &amp; calendar</strong>. In automatic mode, Persian selects Solar Hijri (Jalali/Shamsi), right-to-left layout and Persian numerals. You can still choose Gregorian dates while using Persian.</p><p>Set the date assigned to virtual day 1. The date picker then displays a calendar in the selected system, and every virtual day receives a corresponding date. Advancing or revisiting a virtual day does not move tasks by itself. The Jalali calendar is calculated locally and works offline.</p><p>For Persian typing, the quick-add parser accepts Persian digits, time values and common duration units. Mixed English labels, URLs, keyboard shortcuts and task names remain readable in their natural writing direction.</p></section>
+        <section id="guide-customize"><h3>8. Make TaskArcade yours</h3><p>Theme Studio offers five color palettes—Lumen, Midnight, Slate, Zen Paper and Harbor—and eight independent designs: Agenda, Board, Week map, Cards, Compact, Flow, Focus first and Reading flow. The designs change task hierarchy and interaction, not just color. All adapt to mobile screens. Advanced appearance controls include density, accent colour, typography scale, corner shape, motion, transparency and contrast. Settings control working hours, capacity, focus goals, timer behavior, notifications, carry-over, and undo depth.</p><p>Library contains reusable templates, recurring tasks, tags, aliases, CSV export and full backup/restore. Back up important data regularly. The app stores its data in its local SQLite database; it does not require a cloud account.</p><p>Keyboard users can press <kbd>?</kbd> for shortcuts or <kbd>Ctrl/⌘ K</kbd> to search and run commands. On a touch device, swipe right to complete, swipe left to defer, long-press for task actions, and pull down on Now to refresh.</p></section>
+        <p class="guide-footer">You can reopen this guide from the help button in Settings at any time.</p>
+      </article>
+      <article class="guide-language" data-guide-lang="fa" data-no-translate lang="fa-IR" dir="rtl">
+        <p class="guide-intro">راهنمایی کاربردی برای برنامه‌ریزی زمان، اجرای جلسه‌های تمرکز، فهم گزارش‌ها و اصلاح اطلاعات روزهای گذشته.</p>
+        <nav class="guide-toc" aria-label="فهرست راهنما"><a href="#guide-start-fa">شروع سریع</a><a href="#guide-plan-fa">برنامه‌ریزی وظایف</a><a href="#guide-routines-fa">روال‌ها</a><a href="#guide-focus-fa">زمان‌سنج تمرکز</a><a href="#guide-insights-fa">تحلیل‌ها</a><a href="#guide-history-fa">ویرایش گذشته</a><a href="#guide-calendar-fa">تقویم شمسی</a><a href="#guide-customize-fa">شخصی‌سازی و نگهداری داده</a></nav>
+        <section id="guide-start-fa"><h3>۱. با یک روز شروع کنید</h3><p>تسک‌آرکید کارها را در روزهای مجازی شماره‌گذاری‌شده مرتب می‌کند. روز فقط با انتخاب «پایان روز» جلو می‌رود؛ تغییر شمارندهٔ روز صرفاً برای جابه‌جایی میان روزهاست و وظایف را منتقل نمی‌کند. می‌توانید برای هر روز مجازی، تاریخ میلادی یا شمسی در نظر بگیرید.</p><p>کار را از نمای «اکنون» آغاز کنید. وظیفهٔ برجسته، پیشنهاد بعدی برنامه است. از فهرست وظیفهٔ دیگری را انتخاب کنید یا در کادر افزودن سریع، مورد تازه‌ای بنویسید.</p></section>
+        <section id="guide-plan-fa"><h3>۲. وظایف و برآورد زمان</h3><p>عنوانی روشن بنویسید و مدت‌زمان تقریبی را مشخص کنید. در صورت نیاز، برچسب، اولویت، ساعت انجام، یادداشت، قاعدهٔ تکرار یا گام‌های فرعی هم بیفزایید. تمام این موارد بعداً از ویرایشگر وظیفه قابل تغییرند.</p><p><strong>چند نمونه برای افزودن سریع</strong> (نوشتن این نشانه‌ها اختیاری است و عنوان فارسی یا انگلیسی معمولی هم پذیرفته می‌شود):</p><ul class="guide-examples"><li><code>Prepare report #work 90m !! @09:30</code> — برچسب، مدت، اولویت و ساعت برنامه‌ریزی.</li><li><code>Review notes #study ~2p</code> — برآورد دو چرخهٔ پومودورو.</li><li><code>Walk outside *weekdays +fill bottle</code> — تکرار در روزهای کاری و افزودن یک گام.</li><li><code>Plan the trip &gt;compare train times ^</code> — ثبت یادداشت و سنجاق‌کردن وظیفه.</li></ul><p><code>#t</code> می‌تواند نام کوتاه <code>#tracked</code> باشد. برچسب‌ها و نام‌های کوتاه را در «کتابخانه ← برچسب‌ها و نام‌های کوتاه» مدیریت کنید. تغییر نام کوتاه، عنوان ذخیره‌شدهٔ وظیفه را عوض نمی‌کند.</p><p>نشانه‌های اولویت <code>!</code> کم، <code>!!</code> متوسط و <code>!!!</code> زیاد هستند. مدت‌زمان را می‌توان در انتهای خط هم نوشت؛ مانند «مطالعه ۲۵ دقیقه». رقم‌های فارسی و عبارت‌هایی مثل «۹۰ دقیقه» و «۱ ساعت» نیز پذیرفته می‌شوند.</p></section>
+        <section id="guide-routines-fa"><h3>۳. ساخت و اجرای روال</h3><p>در بخش «روال‌ها» یک توالی بسازید و گام‌ها را به‌ترتیب بچینید. برای هر گام می‌توانید مدت، یادداشت و ایموجی تعیین کنید و با دکمه‌های پیکان ترتیب را تغییر دهید. ویرایش روال ذخیره‌شده هر زمان ممکن است؛ اجرای در حال انجام، نسخهٔ گام‌هایی را که با آن شروع شده حفظ می‌کند.</p><p>با شروع روال، اجراکنندهٔ گام‌به‌گام باز می‌شود. گام جاری، زمان‌سنج، گام بعد، زمان باقی‌ماندهٔ کل و میزان پیشرفت را یک‌جا می‌بینید. می‌توانید مکث کنید، ادامه دهید، گام را تکمیل یا رد کنید، یا اجرا را متوقف کنید. اجراهای کامل‌شده و متوقف‌شده در سابقه می‌مانند. پنج گزینهٔ اختیاری اجراکننده در <strong>تنظیمات ← زمان‌سنج ← تنظیمات پیشرفتهٔ اجراکنندهٔ روال</strong> قرار دارند: رفتن خودکار به گام بعد، آوای محلی، لرزش در دستگاه‌های پشتیبانی‌شده، روشن نگه‌داشتن صفحه و نمایش پیش‌نمایش گام بعد.</p><p>برای شروع سریع، «شروع با نمونه» را انتخاب کنید؛ یک روال صبحگاهیِ قابل ویرایش افزوده و اجرا می‌شود. این اجراکننده برای تلفن همراه و رایانه طراحی شده است.</p></section>
+        <section id="guide-focus-fa"><h3>۴. استفاده از زمان‌سنج تمرکز</h3><p>بخش «تمرکز» را باز کنید، یک وظیفه برگزینید و بازهٔ تمرکز را آغاز کنید. الگوهای کلاسیک، کار عمیق و سریع را می‌توانید در تنظیمات تغییر دهید. مکث، ادامه و توقف جلسه امن است و نتیجه در گزارش جلسه‌ها ثبت می‌شود.</p><p>مدت وظیفه یک برآورد است. ویرایشگر، مدت برنامه‌ریزی‌شده و زمان سپری‌شده را جداگانه نشان می‌دهد. می‌توانید زمان سپری‌شده را مستقیم بنویسید یا با دکمه‌های پنج‌دقیقه‌ای تغییر دهید. با تغییر برآورد، زمان سپری‌شده حفظ می‌شود؛ مگر آن‌که خودتان آن را ویرایش کنید.</p></section>
+        <section id="guide-insights-fa"><h3>۵. خواندن گزارش‌های تحلیلی</h3><p>بازهٔ ۷، ۳۰ یا ۹۰ روزه، یک سال یا تمام سابقه را انتخاب کنید. کارت‌ها میزان تکمیل، زمان تمرکز، دقت برآورد مدت، روزهای رسیدن به هدف، نظم جلسه‌ها و تغییر نسبت به بازهٔ قبل را خلاصه می‌کنند. نمودارها فعالیت روزانه، الگوی تمرکز، سهم برچسب‌ها و تداوم را نشان می‌دهند.</p><p>زمان برنامه‌ریزی‌شده با زمان واقعی جلسه‌های تمرکز یکی نیست. روزهای بدون فعالیت هم در نمودار روزانه دیده می‌شوند تا میانگین فقط بر اساس روزهای شلوغ محاسبه نشود. روی نقطه‌ای از نمودار یا روزی در فهرست «روزهای گذشته» بزنید تا اطلاعات کامل آن روز باز شود.</p></section>
+        <section id="guide-history-fa"><h3>۶. اصلاح اطلاعات روزهای گذشته</h3><p>اطلاعات روزهای قبل فقط برای مشاهده نیستند. در بخش تحلیل‌ها، روز دلخواه را باز کنید تا یادداشت، حال‌وهوا و ظرفیت آن روز را ویرایش کنید؛ وظیفه بیفزایید؛ جزئیات، وضعیت تکمیل، برآورد، زمان سپری‌شده، برچسب، اولویت و گام‌های وظیفه را اصلاح کنید؛ یا جلسهٔ تمرکز را ویرایش، جابه‌جا یا حذف کنید. گزارش‌ها پس از تغییر به‌روز می‌شوند و تغییرها در سابقهٔ بازگشت ثبت می‌گردند.</p><p>جمع‌ها از روی وظایف و جلسه‌های تمرکز محاسبه می‌شوند؛ برای اصلاح یک جمع، اطلاعات پایهٔ همان وظیفه یا جلسه را تغییر دهید تا گزارش نیز درست به‌روزرسانی شود.</p></section>
+        <section id="guide-calendar-fa"><h3>۷. تاریخ میلادی و شمسی</h3><p>در «تنظیمات ← زبان و تقویم» زبان فارسی یا انگلیسی را انتخاب کنید و تقویم را مستقل از زبان تغییر دهید. در حالت خودکار، انتخاب فارسی رابط راست‌چین، تقویم شمسی و رقم‌های فارسی را فعال می‌کند. با این حال، در رابط فارسی هم می‌توانید تاریخ میلادی را نگه دارید.</p><p>تاریخ متناظر با روز مجازی شمارهٔ یک را تعیین کنید. سپس انتخاب‌گر تاریخ، تقویم انتخاب‌شده را نشان می‌دهد و هر روز مجازی تاریخ متناظر خود را خواهد داشت. رفتن به روزی دیگر، به‌تنهایی وظایف را جابه‌جا نمی‌کند. محاسبهٔ تقویم شمسی در خود برنامه انجام می‌شود و به اینترنت نیاز ندارد.</p><p>در افزودن سریع، رقم‌های فارسی، ساعت و واحدهای رایج زمان پذیرفته می‌شوند. عنوان وظایف، نشانی‌های اینترنتی، میان‌برها و عبارت‌های انگلیسی در جهت نوشتاری مناسب خود نمایش داده می‌شوند.</p></section>
+        <section id="guide-customize-fa"><h3>۸. برنامه را مطابق سلیقهٔ خود تنظیم کنید</h3><p>استودیوی ظاهر پنج پالت رنگی ــ لومن، نیمه‌شب، خاکستری‌سبز، کاغذ ذن و هاربر ــ و هشت طرح مستقل دارد: برنامهٔ روزانه، برد، نمای هفتگی، کارت‌ها، فشرده، مسیر گام‌به‌گام، تمرکز بر کار جاری و نمای متنی. طرح‌ها چیدمان و اولویت اطلاعات را تغییر می‌دهند، نه فقط رنگ را، و برای تلفن همراه هم سازگارند. گزینه‌های پیشرفتهٔ ظاهر شامل تراکم، رنگ تأکیدی، اندازهٔ قلم، گردی گوشه‌ها، حرکت، شفافیت و کنتراست هستند. در تنظیمات می‌توانید ساعت کاری، ظرفیت، هدف تمرکز، رفتار زمان‌سنج، اعلان‌ها، انتقال کارهای باز و تعداد مراحل بازگشت را تعیین کنید.</p><p>در کتابخانه به الگوهای آماده، وظایف تکرارشونده، برچسب‌ها، نام‌های کوتاه، خروجی CSV و دریافت یا بازیابی نسخهٔ پشتیبان دسترسی دارید. از داده‌های مهم مرتب نسخهٔ پشتیبان بگیرید. برنامه از پایگاه دادهٔ محلی SQLite استفاده می‌کند و برای کارکردن به حساب ابری نیاز ندارد.</p><p>برای میان‌برهای صفحه‌کلید، <kbd>؟</kbd> را بزنید؛ برای جست‌وجو و اجرای فرمان‌ها، <kbd>Ctrl/⌘ K</kbd> را فشار دهید. در صفحهٔ لمسی، برای تکمیل وظیفه به راست بکشید، برای تعویق به چپ بکشید، برای دیدن گزینه‌ها لمس طولانی کنید و در نمای «اکنون» صفحه را برای به‌روزرسانی به پایین بکشید.</p></section>
+        <p class="guide-footer">هر زمان لازم داشتید، از دکمهٔ راهنما در تنظیمات دوباره به این راهنما دسترسی دارید.</p>
+      </article>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: generic action list (long-press menu, "more" menus)
+     ====================================================================== -->
+<div class="sheet sheet-bottom" id="actionSheet" role="dialog" aria-modal="true" hidden>
+  <div class="sheet-panel sheet-panel-compact">
+    <header class="sheet-head">
+      <div><h2 id="actionSheetTitle">Actions</h2></div>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="action-list" id="actionSheetList"></div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Sheet: generic form dialog (used for templates, recurrences, tags…)
+     ====================================================================== -->
+<div class="sheet" id="formSheet" role="dialog" aria-modal="true" aria-labelledby="formSheetTitle" hidden>
+  <div class="sheet-panel">
+    <header class="sheet-head">
+      <div><span class="eyebrow" id="formSheetEyebrow">New</span><h2 id="formSheetTitle">Form</h2></div>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="sheet-body" id="formSheetBody"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-quiet" data-close-sheet type="button">Cancel</button>
+      <button class="btn btn-primary" id="formSubmitBtn" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     Confirm dialog + toasts + pull-to-refresh indicator
+     ====================================================================== -->
+<div class="dialog" id="confirmDialog" role="alertdialog" aria-modal="true" hidden>
+  <div class="dialog-panel">
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmText"></p>
+    <div class="dialog-actions">
+      <button class="btn btn-quiet" id="confirmCancel" type="button">Cancel</button>
+      <button class="btn btn-danger" id="confirmOk" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+<div class="pull-indicator" id="pullIndicator" hidden><span></span> release to refresh</div>
+<div class="offline-banner" id="offlineBanner" hidden>Offline — changes are queued locally.</div>
+
+<script type="application/json" id="bootData">{{ {"themes": themes, "designs": designs, "palette": palette, "shortcuts": shortcuts, "legacy": legacy} | tojson }}</script>
+<script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
