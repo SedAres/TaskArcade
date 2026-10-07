@@ -324,8 +324,9 @@
     block.style.setProperty("--tag-color", tagColor(task.tag));
 
     const heightRatio = columnTotalSeconds > 0 ? task.total_seconds / columnTotalSeconds : 0;
-    const minHeight = 64;
-    const scaledHeight = Math.max(minHeight, heightRatio * 520);
+    // Keep duration perceptible without turning a single long task into an
+    // oversized card. The exact time is still shown in the task metadata.
+    const scaledHeight = Math.min(170, Math.max(76, heightRatio * 230));
     block.style.minHeight = `${scaledHeight}px`;
 
     const remaining = task.done ? 0 : effectiveRemaining(task);
