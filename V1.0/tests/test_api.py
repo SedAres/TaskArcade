@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -64,7 +65,7 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertIn("counts", health)
 
         state = self.state()
-        for key in ("settings", "tags", "tasks", "aliases", "templates", "meta"):
+        for key in ("settings", "tags", "tasks", "projects", "aliases", "templates", "meta"):
             self.assertIn(key, state)
         self.assertTrue(state["meta"]["themes"])
         self.assertGreaterEqual(len(state["meta"]["themes"]), 5)
@@ -86,6 +87,12 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertIn('id="persianFontSelect"', body)
         self.assertIn('id="historyDaySheet"', body)
         self.assertIn('id="analyticsSummary"', body)
+        self.assertIn('id="viewProjects"', body)
+        self.assertIn('id="projectSheet"', body)
+        self.assertIn('id="editProject"', body)
+        self.assertIn('id="routineRunnerView"', body)
+        self.assertIn("Four optional controls tune the runner", body)
+        self.assertNotIn('id="routineAutoAdvanceSwitch"', body)
         self.assertIn("bootData", body)
 
     def test_static_assets_exist(self) -> None:
@@ -97,7 +104,15 @@ class TaskArcadeTestCase(unittest.TestCase):
             "/static/css/responsive.css",
             "/static/css/rtl.css",
             "/static/css/history-calendar.css",
+            "/static/css/polish.css",
             "/static/js/app.js",
+            "/static/js/calendar-utils.js",
+            "/static/js/projects-ui.js",
+            "/static/js/routines-ui.js",
+            "/static/js/dnd.js",
+            "/static/js/gestures.js",
+            "/static/js/refreshbus.js",
+            "/static/js/i18n.js",
             "/static/js/core.js",
             "/favicon.svg",
             "/manifest.webmanifest",
@@ -115,17 +130,102 @@ class TaskArcadeTestCase(unittest.TestCase):
 
         with self.client.get("/sw.js") as response:
             worker = response.get_data(as_text=True)
-        self.assertIn("taskarcade-v2", worker)
+        self.assertIn("taskarcade-v3", worker)
         for asset in (
             "/static/css/fonts.css",
             "/static/css/rtl.css",
             "/static/css/history-calendar.css",
+            "/static/css/polish.css",
             "/static/fonts/Vazirmatn-VF.woff2",
             "/static/fonts/Estedad-VF.woff2",
             "/static/fonts/NotoNaskhArabic-VF.ttf",
             "/static/fonts/Sahel-Regular.woff2",
+            "/static/js/calendar-utils.js",
+            "/static/js/projects-ui.js",
+            "/static/js/routines-ui.js",
+            "/static/js/dnd.js",
+            "/static/js/gestures.js",
+            "/static/js/refreshbus.js",
         ):
             self.assertIn(asset, worker)
+
+    def test_projects_api_and_task_association(self) -> None:
+        created = self.client.post("/api/projects", json={
+            "name": "Website launch",
+            "description": "Deliver the first public release.",
+            "color": "#2563eb",
+        })
+        self.assertEqual(created.status_code, 200)
+        project = created.get_json()["project"]
+        project_id = project["id"]
+        self.assertEqual(project["name"], "Website launch")
+        self.assertEqual(project["task_count"], 0)
+
+        task_response = self.client.post("/api/tasks", json={
+            "title": "Write launch copy", "seconds": 1800, "project_id": project_id,
+        })
+        self.assertEqual(task_response.status_code, 200)
+        task_id = task_response.get_json()["created"]["id"]
+        task = self.client.get(f"/api/tasks/{task_id}").get_json()["task"]
+        self.assertEqual(task["project_id"], project_id)
+
+        detail = self.client.get(f"/api/projects/{project_id}").get_json()["project"]
+        self.assertEqual(detail["task_count"], 1)
+        self.assertEqual(detail["open_count"], 1)
+        self.assertEqual(detail["planned_seconds"], 1800)
+        state_project = next(item for item in self.state()["projects"] if item["id"] == project_id)
+        self.assertEqual(state_project["task_count"], 1)
+
+        invalid = self.client.patch(f"/api/tasks/{task_id}", json={"project_id": 99999})
+        self.assertEqual(invalid.status_code, 400)
+        renamed = self.client.patch(f"/api/projects/{project_id}", json={"name": "Release 1"})
+        self.assertEqual(renamed.status_code, 200)
+        self.assertEqual(renamed.get_json()["project"]["name"], "Release 1")
+
+        deleted = self.client.delete(f"/api/projects/{project_id}")
+        self.assertEqual(deleted.status_code, 200)
+        self.assertEqual(deleted.get_json()["result"]["unassigned_tasks"], 1)
+        task = self.client.get(f"/api/tasks/{task_id}").get_json()["task"]
+        self.assertEqual(task["project_id"], 0)
+        self.assertEqual(self.client.get(f"/api/projects/{project_id}").status_code, 404)
+
+    def test_project_changes_participate_in_undo_and_redo(self) -> None:
+        project = self.client.post("/api/projects", json={"name": "Undoable"}).get_json()["project"]
+        undone = self.client.post("/api/undo").get_json()["result"]
+        self.assertTrue(undone["ok"])
+        self.assertNotIn(project["id"], [item["id"] for item in self.state()["projects"]])
+        redone = self.client.post("/api/redo").get_json()["result"]
+        self.assertTrue(redone["ok"])
+        self.assertEqual(self.client.get(f"/api/projects/{project['id']}").get_json()["project"]["name"], "Undoable")
+
+    def test_projects_and_task_links_survive_backup_replace(self) -> None:
+        project = self.client.post("/api/projects", json={"name": "Research"}).get_json()["project"]
+        created = self.client.post("/api/tasks", json={
+            "title": "Read the paper", "seconds": 1200, "project_id": project["id"],
+        }).get_json()
+        task_id = created["created"]["id"]
+        backup = self.client.get("/api/backup/export").get_json()
+        self.assertEqual(backup["counts"]["projects"], 1)
+        self.assertEqual(backup["tables"]["tasks"][0]["project_id"], project["id"])
+        self.client.delete(f"/api/projects/{project['id']}")
+        restored = self.client.post("/api/backup/import", json={"backup": backup, "mode": "replace"})
+        self.assertEqual(restored.status_code, 200)
+        self.assertEqual(self.client.get(f"/api/tasks/{task_id}").get_json()["task"]["project_id"], project["id"])
+        self.assertEqual(self.client.get(f"/api/projects/{project['id']}").get_json()["project"]["name"], "Research")
+
+    def test_tracked_tag_is_retired_during_migration(self) -> None:
+        task = self.client.post("/api/tasks", json={"title": "Old tag", "tag": "tracked", "seconds": 600}).get_json()
+        task_id = task["created"]["id"]
+        conn = sqlite3.connect(config.DB_PATH)
+        conn.execute("INSERT OR IGNORE INTO tag_aliases (alias, tag_name, created_at) VALUES ('t', 'tracked', '')")
+        conn.commit()
+        conn.close()
+
+        database.init_db(seed_samples=False)
+        state = self.state()
+        self.assertNotIn("tracked", [tag["name"] for tag in state["tags"]])
+        self.assertNotIn("t", state["aliases"])
+        self.assertEqual(self.client.get(f"/api/tasks/{task_id}").get_json()["task"]["tag"], "")
 
     def test_routines_can_be_created_and_run_step_by_step(self) -> None:
         created = self.client.post("/api/routines", json={
@@ -173,6 +273,30 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertEqual(finished["step_statuses"], ["completed", "skipped", "completed"])
         self.assertIsNone(self.client.get("/api/routine-runs").get_json()["active_routine_run"])
 
+    def test_routine_move_to_end_is_an_explicit_ordered_action(self) -> None:
+        routine = self.client.post("/api/routines", json={
+            "name": "Three-part flow",
+            "steps": [
+                {"title": "First", "minutes": 2},
+                {"title": "Second", "minutes": 3},
+                {"title": "Third", "minutes": 4},
+            ],
+        }).get_json()["routine"]
+        run = self.client.post(f"/api/routines/{routine['id']}/start").get_json()["run"]
+        moved = self.client.patch(f"/api/routine-runs/{run['id']}", json={
+            "action": "move_to_end", "remaining_seconds": 75,
+        }).get_json()["run"]
+        self.assertEqual([step["title"] for step in moved["steps"]], ["Second", "Third", "First"])
+        self.assertEqual(moved["current_step"]["title"], "Second")
+        self.assertEqual(moved["step_statuses"], ["active", "pending", "pending"])
+        self.assertEqual(moved["status"], "running")
+
+        skipped = self.client.patch(f"/api/routine-runs/{run['id']}", json={
+            "action": "skip_step", "remaining_seconds": 150,
+        }).get_json()["run"]
+        self.assertEqual(skipped["current_step"]["title"], "Third")
+        self.assertEqual(skipped["skipped_steps"], 1)
+
     def test_routines_reject_empty_steps_and_can_be_archived(self) -> None:
         invalid = self.client.post("/api/routines", json={"name": "Empty", "steps": []})
         self.assertEqual(invalid.status_code, 400)
@@ -211,9 +335,8 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertEqual(self.client.get("/api/routines").get_json()["routines"][0]["name"], "Tea break")
         self.assertEqual(self.client.get("/api/routine-runs").get_json()["routine_runs"][0]["status"], "completed")
 
-    def test_five_routine_runner_preferences_persist(self) -> None:
+    def test_four_routine_runner_preferences_persist(self) -> None:
         choices = {
-            "routine_auto_advance": 0,
             "routine_sound": 0,
             "routine_vibrate": 1,
             "routine_keep_awake": 1,
@@ -224,19 +347,23 @@ class TaskArcadeTestCase(unittest.TestCase):
         settings = self.state()["settings"]
         for key, value in choices.items():
             self.assertEqual(settings[key], value)
+        ignored = self.client.patch("/api/settings", json={"routine_auto_advance": 1})
+        self.assertEqual(ignored.status_code, 200)
+        self.assertEqual(self.state()["settings"]["routine_auto_advance"], 0)
 
     # -- aliases ---------------------------------------------------------
     def test_alias_resolution_defaults(self) -> None:
         state = self.state()
-        self.assertEqual(state["aliases"].get("t"), "tracked")
+        self.assertNotIn("t", state["aliases"])
+        self.assertEqual(state["aliases"].get("w"), "work")
         self.assertEqual(state["aliases"].get("s"), "study")
 
     def test_parse_resolves_alias(self) -> None:
-        result = self.client.post("/api/parse", json={"text": "Write report #t 90m !!!"}).get_json()
+        result = self.client.post("/api/parse", json={"text": "Write report #w 90m !!!"}).get_json()
         parsed = result["parsed"]
-        self.assertEqual(parsed["tag"], "tracked")
+        self.assertEqual(parsed["tag"], "work")
         self.assertTrue(parsed["tag_alias"])
-        self.assertEqual(parsed["tag_token"], "t")
+        self.assertEqual(parsed["tag_token"], "w")
         self.assertEqual(parsed["seconds"], 5400)
         self.assertEqual(parsed["priority"], 3)
 
@@ -354,7 +481,7 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertEqual(invalid.status_code, 400)
 
     def test_done_skip_and_reopen(self) -> None:
-        ids = self.add("A #t 30m\nB #t 30m")["result"]["ids"]
+        ids = self.add("A #w 30m\nB #w 30m")["result"]["ids"]
         self.client.post(f"/api/tasks/{ids[0]}/done", json={})
         tasks = {task["id"]: task for task in self.state()["tasks"]}
         self.assertTrue(tasks[ids[0]]["done"])
@@ -370,7 +497,7 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertEqual(reopened["remaining_seconds"], reopened["total_seconds"])
 
     def test_reorder_and_move(self) -> None:
-        ids = self.add("One #t 10m\nTwo #t 10m\nThree #t 10m")["result"]["ids"]
+        ids = self.add("One #w 10m\nTwo #w 10m\nThree #w 10m")["result"]["ids"]
         self.client.post("/api/tasks/reorder", json={"order": list(reversed(ids)), "day_index": 1})
         tasks = [task for task in self.state()["tasks"] if task["id"] in ids]
         ordered = sorted(tasks, key=lambda task: task["order_index"])
@@ -418,7 +545,7 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertEqual(len(remaining["subtasks"]), 1)
 
     def test_bulk_action(self) -> None:
-        ids = self.add("X #t 10m\nY #t 10m\nZ #t 10m")["result"]["ids"]
+        ids = self.add("X #w 10m\nY #w 10m\nZ #w 10m")["result"]["ids"]
         result = self.client.post("/api/tasks/bulk-action", json={"action": "done", "ids": ids}).get_json()
         self.assertEqual(result["result"]["touched"], 3)
         self.assertTrue(all(task["done"] for task in self.state()["tasks"] if task["id"] in ids))
@@ -456,7 +583,7 @@ class TaskArcadeTestCase(unittest.TestCase):
 
     # -- day progression --------------------------------------------------
     def test_finish_day_carries_open_tasks(self) -> None:
-        ids = self.add("Keep #t 30m\nFinish me #t 30m")["result"]["ids"]
+        ids = self.add("Keep #w 30m\nFinish me #w 30m")["result"]["ids"]
         self.client.post(f"/api/tasks/{ids[0]}/done", json={})
         result = self.client.post("/api/day/finish", json={"carry": "always", "mood": "good"}).get_json()
         self.assertEqual(result["next_day"], 2)
@@ -470,7 +597,7 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertTrue(any(log["day_index"] == 1 and log["mood"] == "good" for log in logs))
 
     def test_finish_day_can_leave_tasks_behind(self) -> None:
-        task_id = self.add("Stay put #t 30m")["result"]["ids"][0]
+        task_id = self.add("Stay put #w 30m")["result"]["ids"][0]
         self.client.post("/api/day/finish", json={"carry": "never"})
         task = self.client.get(f"/api/tasks/{task_id}").get_json()["task"]
         self.assertEqual(task["day_index"], 1)
@@ -518,7 +645,7 @@ class TaskArcadeTestCase(unittest.TestCase):
     def test_recurrences_materialize(self) -> None:
         self.client.post("/api/recurrences", json={
             "title": "Daily review",
-            "tag": "tracked",
+            "tag": "work",
             "duration_seconds": 900,
             "rule": {"freq": "daily", "interval": 1, "weekdays": [], "time": "21:00"},
             "anchor_day_index": 1,
@@ -575,9 +702,9 @@ class TaskArcadeTestCase(unittest.TestCase):
 
     # -- undo/redo --------------------------------------------------------
     def test_undo_and_redo_round_trip(self) -> None:
-        self.add("Something #t 20m")
+        self.add("Something #w 20m")
         before = len(self.state()["tasks"])
-        task_id = self.add("Remove me #t 20m")["result"]["ids"][0]
+        task_id = self.add("Remove me #w 20m")["result"]["ids"][0]
         self.assertEqual(len(self.state()["tasks"]), before + 1)
 
         self.client.delete(f"/api/tasks/{task_id}")
@@ -670,7 +797,7 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_cleanup_and_purge(self) -> None:
-        task_id = self.add("Old #t 10m")["result"]["ids"][0]
+        task_id = self.add("Old #w 10m")["result"]["ids"][0]
         self.client.post(f"/api/tasks/{task_id}/done", json={})
         purged = self.client.post("/api/tasks/purge", json={"day_index": 1}).get_json()
         self.assertGreaterEqual(purged["result"]["archived"], 1)
@@ -687,7 +814,7 @@ class TaskArcadeTestCase(unittest.TestCase):
         soon = (datetime.now() + timedelta(minutes=5)).replace(microsecond=0).isoformat()
         self.client.post("/api/tasks", json={
             "title": "Ping me",
-            "tag": "tracked",
+            "tag": "work",
             "seconds": 600,
             "reminder_at": soon,
         })
@@ -698,13 +825,13 @@ class TaskArcadeTestCase(unittest.TestCase):
 
     # -- events -----------------------------------------------------------
     def test_events_are_recorded(self) -> None:
-        self.add("Logged #t 10m")
+        self.add("Logged #w 10m")
         events = self.client.get("/api/events?limit=20").get_json()["events"]
         kinds = {event["kind"] for event in events}
         self.assertIn("task.create", kinds)
 
     def test_history_endpoint(self) -> None:
-        self.add("Something #t 10m")
+        self.add("Something #w 10m")
         history = self.client.get("/api/history").get_json()["history"]
         self.assertTrue(history)
         self.client.post("/api/history/clear", json={})
@@ -758,7 +885,7 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertFalse(rule_matches_day(weekdays, 7, 1))
 
     def test_bulk_parser_reports_bad_lines(self) -> None:
-        result = self.add("#t 30m\nA good task #t 30m")
+        result = self.add("#w 30m\nA good task #w 30m")
         self.assertEqual(result["result"]["created"], 1)
         self.assertEqual(len(result["result"]["bad_lines"]), 1)
 
@@ -773,11 +900,14 @@ class TaskArcadeTestCase(unittest.TestCase):
         self.assertEqual(self.client.delete("/api/tasks/999999").status_code, 404)
 
     def test_invalid_duration_is_rejected(self) -> None:
-        task_id = self.add("Task #t 30m")["result"]["ids"][0]
+        task_id = self.add("Task #w 30m")["result"]["ids"][0]
         response = self.client.patch(f"/api/tasks/{task_id}", json={"duration_text": "banana"})
         self.assertEqual(response.status_code, 400)
 
     def test_theme_registry_shape(self) -> None:
+        manifest = self.client.get("/manifest.webmanifest").get_json()
+        self.assertEqual(manifest["background_color"], "#f4f6fb")
+        self.assertEqual(manifest["theme_color"], "#4f46e5")
         state = self.state()
         themes = state["meta"]["themes"]
         self.assertEqual(len(themes), 5)
@@ -790,7 +920,7 @@ class TaskArcadeTestCase(unittest.TestCase):
             self.assertIn("blurb", theme)
 
     def test_stats_sparkline(self) -> None:
-        self.add("Spark #t 30m")
+        self.add("Spark #w 30m")
         payload = self.client.get("/api/stats/sparkline?days=10").get_json()
         self.assertIn("values", payload)
         self.assertIn("sparkline", payload)

@@ -26,6 +26,7 @@ from core import history as history_service
 from core import services as svc
 from core import stats as stats_service
 from core import routines as routine_service
+from core import projects as project_service
 from core.config import APP_NAME, APP_TAGLINE, APP_VERSION, BASE_DIR, PALETTE, SHORTCUTS, THEMES, DESIGNS
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -162,8 +163,8 @@ def manifest():
         "description": APP_TAGLINE,
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#0b0e17",
-        "theme_color": "#120a24",
+        "background_color": "#f4f6fb",
+        "theme_color": "#4f46e5",
         "icons": [
             {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
         ],
@@ -174,12 +175,12 @@ def manifest():
 @app.route("/sw.js")
 def service_worker():
     script = """
-const CACHE = 'taskarcade-v2';
+const CACHE = 'taskarcade-v3';
 const ASSETS = [
   '/', '/static/css/fonts.css', '/static/css/base.css',
   '/static/css/components.css', '/static/css/themes.css',
   '/static/css/responsive.css', '/static/css/rtl.css',
-  '/static/css/history-calendar.css',
+  '/static/css/history-calendar.css', '/static/css/polish.css',
   '/static/fonts/Vazirmatn-VF.woff2',
   '/static/fonts/Estedad-VF.woff2',
   '/static/fonts/NotoNaskhArabic-VF.ttf',
@@ -188,7 +189,14 @@ const ASSETS = [
   '/static/fonts/Sahel-SemiBold.woff2',
   '/static/fonts/Sahel-Bold.woff2',
   '/static/fonts/Sahel-Black.woff2',
-  '/static/js/app.js'
+  '/favicon.svg', '/manifest.webmanifest',
+  '/static/js/api.js', '/static/js/app.js', '/static/js/calendar-utils.js',
+  '/static/js/core.js', '/static/js/dnd.js', '/static/js/focus.js',
+  '/static/js/gestures.js', '/static/js/history-calendar.js', '/static/js/i18n.js',
+  '/static/js/insights.js', '/static/js/library.js', '/static/js/now.js',
+  '/static/js/palette.js', '/static/js/projects-ui.js', '/static/js/quickadd.js',
+  '/static/js/refreshbus.js', '/static/js/routines-ui.js', '/static/js/settings.js',
+  '/static/js/tasks.js', '/static/js/theme.js', '/static/js/ui.js'
 ];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).catch(() => null));
@@ -222,7 +230,7 @@ def api_health():
     conn = database.get_db()
     counts = {
         table: conn.execute(f"SELECT COUNT(*) AS c FROM {table}").fetchone()["c"]
-        for table in ["tasks", "tags", "tag_aliases", "subtasks", "events", "sessions", "templates", "routines", "routine_runs"]
+        for table in ["tasks", "projects", "tags", "tag_aliases", "subtasks", "events", "sessions", "templates", "routines", "routine_runs"]
     }
     return jsonify(
         {
@@ -426,6 +434,33 @@ def svc_describe_chips(parsed):
 
 svc.describe_rule = svc_describe_rule
 svc.describe_chips = svc_describe_chips
+
+
+
+# ---------------------------------------------------------------------------
+# Projects
+# ---------------------------------------------------------------------------
+@app.route("/api/projects", methods=["GET", "POST"])
+@guard
+def api_projects():
+    conn = database.get_db()
+    if request.method == "GET":
+        return jsonify({"projects": project_service.list_projects(conn)})
+    project = project_service.create_project(conn, payload())
+    return {"project": project, "projects": project_service.list_projects(conn)}
+
+
+@app.route("/api/projects/<int:project_id>", methods=["GET", "PATCH", "DELETE"])
+@guard
+def api_project(project_id: int):
+    conn = database.get_db()
+    if request.method == "GET":
+        return jsonify({"project": project_service.get_project(conn, project_id)})
+    if request.method == "DELETE":
+        result = project_service.delete_project(conn, project_id)
+        return {"result": result, "projects": project_service.list_projects(conn)}
+    project = project_service.update_project(conn, project_id, payload())
+    return {"project": project, "projects": project_service.list_projects(conn)}
 
 
 # ---------------------------------------------------------------------------
@@ -1007,6 +1042,8 @@ def api_maintenance_reset():
     if scope in ("tasks", "all"):
         conn.execute("DELETE FROM subtasks")
         conn.execute("DELETE FROM tasks")
+    if scope == "all":
+        conn.execute("DELETE FROM projects")
     if scope in ("tags", "all"):
         conn.execute("DELETE FROM tag_aliases")
         conn.execute("DELETE FROM tags")

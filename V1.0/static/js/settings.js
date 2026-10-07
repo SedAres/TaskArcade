@@ -51,7 +51,6 @@ const BOOLEAN_FIELDS = {
   pomodoro_auto_start: "pomoAutoSwitch",
   sound: "soundSwitch",
   notifications: "notifySwitch",
-  routine_auto_advance: "routineAutoAdvanceSwitch",
   routine_sound: "routineSoundSwitch",
   routine_vibrate: "routineVibrateSwitch",
   routine_keep_awake: "routineKeepAwakeSwitch",
@@ -158,7 +157,7 @@ export function renderShortcutList() {
   if (!syntax) return;
   clear(syntax);
   const examples = [
-    ["#tag or #alias", "Attach a tag — aliases resolve, e.g. #t → #tracked"],
+    ["#tag or #alias", "Attach a tag — aliases are customizable, e.g. #w → #work"],
     ["@09:30 · @now · @+25m", "Schedule a task on the clock"],
     ["! !! !!!", "Low, medium and high priority"],
     ["~90m · ~1h30m · ~2p", "Explicit estimate (p = one pomodoro)"],

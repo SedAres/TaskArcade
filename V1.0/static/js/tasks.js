@@ -38,6 +38,16 @@ export function tagChip(name) {
   ]);
 }
 
+function projectChip(projectId) {
+  const project = (store.get("projects", []) || []).find((item) => Number(item.id) === Number(projectId));
+  if (!project) return null;
+  return h("span", {
+    class: "task-project-pill",
+    style: { "--project-color": project.color || "var(--accent)" },
+    title: `${t("Project")}: ${project.name}`,
+  }, [icon("briefcase"), h("span", { class: "task-project-name" }, project.name)]);
+}
+
 export function priorityMark(priority) {
   if (!priority) return null;
   return h("span", {
@@ -130,9 +140,10 @@ function buildTaskRow(task, currentTask) {
     },
   }, icon("check"));
 
-  const drag = h("button", { class: "task-drag", type: "button", tabindex: "-1", "aria-hidden": "true" }, icon("drag"));
+  const drag = h("button", { class: "task-drag", type: "button", title: t("Drag to reorder"), "aria-label": t("Drag to reorder task"), "aria-keyshortcuts": "Alt+ArrowUp Alt+ArrowDown" }, icon("drag"));
 
   const meta = h("div", { class: "task-meta" }, [
+    projectChip(task.project_id),
     tagChip(task.tag),
     priorityMark(task.priority),
     h("span", { class: "task-duration" }, fmtDuration(task.done ? 0 : task.remaining_seconds)),
@@ -233,7 +244,11 @@ export function renderTimeline() {
     days.forEach((day) => inner.appendChild(buildDayColumn(day, current, layout, sortMode)));
   }
 
-  initDragAndDrop(inner, { selector: ".task-card-block", onDrop: handleTimelineDrop });
+  if (layout === "flow") {
+    initDragAndDrop(inner, { selector: ".flow-item", onDrop: handleFlowDrop });
+  } else {
+    initDragAndDrop(inner, { selector: ".task-card-block", onDrop: handleTimelineDrop });
+  }
 }
 
 function buildCalendarLayout(current, sortMode) {
@@ -295,38 +310,43 @@ function buildCalendarLayout(current, sortMode) {
 }
 
 function buildFlowLayout(days, current, sortMode) {
-  const wrapper = h("section", { class: "flow-layout", dataset: { dndContainer: "1" } }, [
+  const wrapper = h("section", { class: "flow-layout" }, [
     h("header", { class: "flow-layout-head" }, [
       h("div", {}, [h("span", { class: "eyebrow" }, t("One step at a time")), h("h3", {}, t("Your task flow"))]),
       h("span", { class: "pill" }, `${days.length} ${t(days.length === 1 ? "day" : "days")}`),
     ]),
   ]);
-  let previousDay = null;
+  const dayGroups = days.map((dayIndex) => ({
+    dayIndex,
+    tasks: sortForLayout(tasksForDay(dayIndex), sortMode, "flow"),
+  }));
+  if (!dayGroups.some((group) => group.tasks.length)) {
+    wrapper.appendChild(h("div", { class: "day-empty" }, [
+      h("p", {}, t("There are no tasks in this view yet.")),
+      h("button", { class: "btn btn-primary btn-sm", type: "button", onclick: () => emit("focus-quick-add", { day: current }) }, t("Add a task")),
+    ]));
+    return wrapper;
+  }
+
   let flowIndex = 0;
-  for (const dayIndex of days) {
-    const tasks = sortForLayout(tasksForDay(dayIndex), sortMode, "flow");
-    if (!tasks.length) continue;
-    if (previousDay !== dayIndex) {
-      wrapper.appendChild(h("div", { class: "flow-day-heading" }, [
-        h("span", { class: "flow-day-line" }),
-        h("strong", {}, dayLabel(dayIndex, current)),
-        h("small", {}, calendarDayLabel(dayIndex)),
-      ]));
-      previousDay = dayIndex;
-    }
+  for (const { dayIndex, tasks } of dayGroups) {
+    wrapper.appendChild(h("div", { class: "flow-day-heading", dataset: { day: String(dayIndex) } }, [
+      h("span", { class: "flow-day-line" }),
+      h("strong", {}, dayLabel(dayIndex, current)),
+      h("small", {}, calendarDayLabel(dayIndex)),
+    ]));
+    const lane = h("div", { class: "flow-day-items day-tasks", dataset: { day: String(dayIndex), dndContainer: "1" } });
     tasks.forEach((task) => {
       flowIndex += 1;
       const marker = h("span", { class: `flow-marker${task.done ? " is-done" : ""}` }, task.done ? "✓" : String(flowIndex).padStart(2, "0"));
-      wrapper.appendChild(h("div", { class: `flow-item${task.done ? " is-done" : ""}` }, [
+      lane.appendChild(h("div", { class: `flow-item${task.done ? " is-done" : ""}` }, [
         marker,
         buildTaskCard(task, { current, layout: "flow", showDay: false }),
       ]));
     });
+    if (!tasks.length) lane.appendChild(h("p", { class: "flow-day-empty" }, t("No tasks planned")));
+    wrapper.appendChild(lane);
   }
-  if (!flowIndex) wrapper.appendChild(h("div", { class: "day-empty" }, [
-    h("p", {}, t("There are no tasks in this view yet.")),
-    h("button", { class: "btn btn-primary btn-sm", type: "button", onclick: () => emit("focus-quick-add", { day: current }) }, t("Add a task")),
-  ]));
   return wrapper;
 }
 
@@ -562,8 +582,16 @@ function buildTaskCard(task, context = {}) {
     : 0;
 
   const title = h("span", { class: "task-title" }, task.title);
+  const drag = h("button", {
+    class: "task-drag",
+    type: "button",
+    title: t("Drag to reorder"),
+    "aria-label": t("Drag to reorder task"),
+    "aria-keyshortcuts": "Alt+ArrowUp Alt+ArrowDown",
+  }, icon("drag"));
   const metaLine = h("div", { class: "task-meta-line" }, [
     context.showDay ? h("span", {}, dayShortLabel(task.day_index, context.current)) : null,
+    projectChip(task.project_id),
     tagChip(task.tag),
     task.pinned ? h("span", { class: "pin-mark" }, [icon("pin")]) : null,
     scheduleChip(task),
@@ -590,39 +618,37 @@ function buildTaskCard(task, context = {}) {
 
   if (layout === "compact") {
     card.append(
-      h("span", { class: "task-meta-line" }, task.done ? "done" : (task.pinned ? "pinned" : "open")),
+      h("div", { class: "task-table-status" }, [drag, h("span", { class: "task-meta-line" }, task.done ? t("done") : (task.pinned ? t("pinned") : t("open")))]),
       h("span", { class: "task-title" }, [priorityMark(task.priority), " ", task.title]),
       durationEl,
       miniProgress,
-      h("span", { class: "task-meta-line" }, task.tag ? `#${store.tag(task.tag)?.label || task.tag}` : "—"),
-    );
-  } else if (layout === "focus") {
-    card.append(
-      durationEl,
-      h("div", { class: "task-main" }, [title, metaLine]),
-      h("div", { class: "task-side" }, [miniProgress, actions]),
+      h("span", { class: "task-meta-line" }, [projectChip(task.project_id), task.tag ? `#${store.tag(task.tag)?.label || task.tag}` : "—"]),
     );
   } else if (layout === "stream") {
     card.append(
-      h("div", { class: "task-main" }, [title, metaLine]),
+      h("div", { class: "task-top" }, [drag, h("div", { class: "task-main" }, [title, metaLine])]),
       durationEl,
       miniProgress,
     );
   } else if (layout === "cards") {
     const ring = tileRing(progress);
-    card.append(ring, h("div", { class: "task-top" }, [title, actions]), metaLine, durationEl, miniProgress);
+    card.append(ring, h("div", { class: "task-top" }, [drag, title, actions]), metaLine, durationEl, miniProgress);
   } else {
     card.append(
-      h("div", { class: "task-top" }, [title, actions]),
+      h("div", { class: "task-top" }, [drag, title, actions]),
       metaLine,
       h("div", { class: "row-between" }, [durationEl, h("span", { class: "task-meta-line" }, h("span", {}, `${fmtPercent(progress)}`))]),
       miniProgress,
     );
   }
 
-  card.addEventListener("click", () => openTaskSheet(task.id));
+  card.addEventListener("click", (event) => {
+    if (event.target.closest("button, a, input, textarea, select")) return;
+    openTaskSheet(task.id);
+  });
   card.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") openTaskSheet(task.id);
+    if (event.target !== card || event.key !== "Enter") return;
+    openTaskSheet(task.id);
   });
   attachSwipe(card, { onRight: () => toggleDone(task, true), onLeft: () => skipTask(task) });
   attachLongPress(card, () => taskActions(task));
@@ -888,6 +914,7 @@ export function openTaskSheet(taskId) {
   byId("editTitle").value = task.title;
   byId("editNotes").value = task.notes || "";
   byId("editTag").value = task.tag || "";
+  renderProjectOptions(task.project_id);
   byId("editDay").value = task.day_index;
   if (byId("editDayDateHint")) byId("editDayDateHint").textContent = `${window.TaskArcadeI18n?.t?.("Calendar date") || "Calendar date"}: ${calendarDayLabel(task.day_index)}`;
   byId("editDuration").value = fmtDuration(task.total_seconds, "hm");
@@ -939,6 +966,17 @@ function renderDurationChips() {
       }, preset),
     );
   });
+}
+
+function renderProjectOptions(selectedProjectId = 0) {
+  const select = byId("editProject");
+  if (!select) return;
+  clear(select);
+  select.appendChild(h("option", { value: "0" }, t("No project")));
+  (store.get("projects", []) || []).filter((project) => project.status !== "archived" || Number(project.id) === Number(selectedProjectId)).forEach((project) => {
+    select.appendChild(h("option", { value: String(project.id) }, project.name));
+  });
+  select.value = String(selectedProjectId || 0);
 }
 
 function renderTagOptions() {
@@ -994,7 +1032,7 @@ function renderSubtaskList() {
 
 function parseEditableElapsed(value) {
   const text = normalizeDigits(String(value ?? "")).trim();
-  if (!text || /^0(?:\\s*(?:s|sec|secs|second|seconds|m|min|mins|minute|minutes|د|دقیقه|ث|ثانیه))?$/iu.test(text)) return 0;
+  if (!text || /^0(?:\s*(?:s|sec|secs|second|seconds|m|min|mins|minute|minutes|د|دقیقه|ث|ثانیه))?$/iu.test(text)) return 0;
   return parseDurationText(text, store.settingNum("pomodoro_focus", 25));
 }
 
@@ -1010,6 +1048,7 @@ export async function saveTaskSheet() {
     title: byId("editTitle").value.trim(),
     notes: byId("editNotes").value,
     tag: byId("editTag").value.replace(/^#/, "").trim(),
+    project_id: Number(byId("editProject")?.value || 0),
     day_index: Number(byId("editDay").value) || 1,
     priority: Number($("#priorityControl button.is-active")?.dataset.priority || 0),
     duration_text: byId("editDuration").value.trim(),
@@ -1121,14 +1160,18 @@ async function handleRowDrop(orderedIds, context) {
   }
 }
 
+async function handleFlowDrop(orderedIds, context) {
+  try {
+    await api.reorder(orderedIds, context?.day ?? null);
+    await refresh();
+  } catch (error) {
+    toast(error.message || "Could not reorder the task flow", { tone: "error" });
+  }
+}
+
 async function handleTimelineDrop(orderedIds, context) {
   try {
-    if (context?.day) {
-      await api.reorder(orderedIds, context.day);
-      await api.bulkAction("move", orderedIds, { day_index: context.day });
-    } else {
-      await api.reorder(orderedIds, null);
-    }
+    await api.reorder(orderedIds, context?.day ?? null);
     await refresh();
   } catch (error) {
     toast(error.message || "Could not move the task", { tone: "error" });

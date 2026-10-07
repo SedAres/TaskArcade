@@ -310,6 +310,7 @@ export function initPullToRefresh() {
     (event) => {
       if (window.scrollY > 4 || event.touches.length !== 1) return;
       if (document.body.classList.contains("focus-mode")) return;
+      if (event.target.closest?.("button, input, textarea, select, a, .sheet, .task-row, .task-card-block, .flow-item, .routine-step-edit, .routine-runner-view, [data-dnd-container]")) return;
       startY = event.touches[0].clientY;
       pulling = true;
     },

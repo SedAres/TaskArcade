@@ -2,7 +2,7 @@
    TaskArcade — quick add & bulk composer
    Instant, offline-friendly parsing preview (the server parser remains the
    source of truth on submit) with alias resolution highlighted so users can
-   see "#t" turn into "#tracked" before they commit.
+   see short tag aliases resolve before they commit.
    ========================================================================== */
 
 import {
@@ -399,7 +399,7 @@ function insertBulkExample() {
   if (!textarea) return;
   const current = store.settingNum("current_day_index", 1);
   const sample = [
-    "Plan the day #t 10m !",
+    "Plan the day #w 10m !",
     "Deep work block #w 90m @09:30 !!",
     "  outline the report",
     "  write section one",

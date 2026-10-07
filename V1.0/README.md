@@ -50,15 +50,16 @@ Settings provide four Persian typeface choices—Vazirmatn, Estedad, Noto Naskh 
 - Set an IANA time zone such as `Asia/Tehran` for local session-time display, scheduling, and best-focus-hour analytics. Leave the field blank to use the device/server's local zone.
 - The Jalali calendar conversion works locally and does not depend on browser locale data or a remote service.
 
-### Five useful routine-runner options
+### Routine runner
 
-The **Settings → Timer → Advanced routine runner** area has five optional controls. Each one changes runner behavior only; it never edits your saved step lists:
+Starting a routine opens a dedicated full-page runner with the current step, timer, progress and step sequence kept in view. A timer reaching zero never advances the run: choose **Complete step**, **Skip step**, or **Move to end** explicitly. Reorder saved steps by dragging their visible handles on desktop or touch devices, or use the arrow controls.
 
-1. **Auto-advance timed steps** — when a countdown reaches zero, complete the current step and start the next. Turn this off if you prefer to decide when to continue.
-2. **Play a step chime** — play a short tone generated locally by the browser when a step changes.
-3. **Vibrate on step change** — request a brief haptic cue on phones and browsers that support vibration.
-4. **Keep the screen awake** — request a browser screen wake lock while the routine is running; this may use more battery and is unavailable in some browsers.
-5. **Show the next step** — keep a preview visible so you can prepare without leaving the current step.
+The **Settings → Timer → Advanced routine runner** area has four optional controls. They tune runner feedback only; they never edit saved step lists:
+
+1. **Play a step chime** — play a short tone generated locally by the browser when a step changes.
+2. **Vibrate on step change** — request a brief haptic cue on phones and browsers that support vibration.
+3. **Keep the screen awake** — request a browser screen wake lock while the routine is running; this may use more battery and is unavailable in some browsers.
+4. **Show the next step** — keep a preview visible so you can prepare without leaving the current step.
 
 Language, calendar, virtual-day anchor, time zone, numeral style, and Persian typeface remain independently configurable under Settings. All four bundled Persian typefaces are available offline.
 
@@ -96,7 +97,7 @@ Plan the trip >compare train times ^
 
 | Marker | Meaning |
 | --- | --- |
-| `#tag` | Choose or create a tag; aliases are customizable (`#t` resolves to `#tracked` by default). |
+| `#tag` | Choose or create a tag; aliases are customizable (`#w` resolves to `#work` by default). |
 | `25m`, `1h`, `۹۰ دقیقه` | Set an estimate; Persian and Arabic-Indic digits are supported. |
 | `!`, `!!`, `!!!` | Low, medium, or high priority. |
 | `@09:30` | Set a scheduled time. |
@@ -152,6 +153,7 @@ The API tests use a temporary database. They cover task editing, editable histor
 
 - **Backend:** Flask, Python standard library, and SQLite.
 - **Frontend:** semantic HTML, CSS, and JavaScript ES modules; no frontend build step is required.
+- **Projects:** group tasks by outcome, track progress, and keep project data in exports and backups.
 - **Calendar:** local Gregorian/Solar Hijri conversion with a stable ISO database anchor.
 - **Local data:** `V1.0/data/` (ignored by Git).
 - **Main entry point:** `V1.0/app.py`.
@@ -165,9 +167,9 @@ The API tests use a temporary database. They cover task editing, editable histor
 
 در **تنظیمات ← زبان و تقویم** می‌توانید فارسی را انتخاب کنید تا رابط راست‌به‌چپ و تقویم شمسی فعال شود. تقویم، رقم‌ها، قلم فارسی، تاریخ روز مجازی نخست و منطقهٔ زمانی هرکدام جداگانه قابل تنظیم‌اند. چهار قلم وزیرمتن، استعداد، نسخ نوتو و ساحل همراه برنامه هستند و بدون ارتباط با سرویس بیرونی به‌صورت آفلاین کار می‌کنند؛ مجوزها و مبدأ قلم‌ها در `V1.0/static/fonts/README.md` آمده است. از **تنظیمات ← راهنما و راهنمای کاربر** نیز به راهنمای کامل فارسی و انگلیسی دسترسی دارید.
 
-وظایف را در نمای «برنامه‌ریزی» بیفزایید و با نشانه‌هایی مثل `#t` برای برچسب، `۹۰ دقیقه` برای برآورد، `!!` برای اولویت یا `@09:30` برای ساعت انجام، ورود سریع را ساده کنید. `#t` به‌طور پیش‌فرض به `#tracked` اشاره می‌کند و نام‌های کوتاه در کتابخانه قابل تغییرند. زمان سپری‌شدهٔ وظیفه از زمان جلسه‌های تمرکز جداست و هر دو در سابقهٔ روزهای گذشته قابل ویرایش‌اند.
+وظایف را در نمای «برنامه‌ریزی» بیفزایید و با نشانه‌هایی مثل `#w` برای برچسب، `۹۰ دقیقه` برای برآورد، `!!` برای اولویت یا `@09:30` برای ساعت انجام، ورود سریع را ساده کنید. `#w` به‌طور پیش‌فرض به `#work` اشاره می‌کند و نام‌های کوتاه در کتابخانه قابل تغییرند. زمان سپری‌شدهٔ وظیفه از زمان جلسه‌های تمرکز جداست و هر دو در سابقهٔ روزهای گذشته قابل ویرایش‌اند.
 
-در بخش «روال‌ها» توالی‌های قابل استفادهٔ دوباره بسازید؛ هر گام عنوان، مدت، یادداشت و ایموجی خودش را دارد و ترتیبش قابل ویرایش است. اجراکنندهٔ گام‌به‌گام، زمان‌سنج، گام جاری و بعدی و پیشرفت کل را نشان می‌دهد و امکان مکث، ادامه، تکمیل یا ردکردن گام را دارد. پنج گزینهٔ پیشرفتهٔ آن در «تنظیمات ← زمان‌سنج» قرار دارند: رفتن خودکار به گام بعد، آوای پایان، لرزش، روشن نگه‌داشتن صفحه و نمایش پیش‌نمایش گام بعد.
+در بخش «روال‌ها» توالی‌های قابل استفادهٔ دوباره بسازید؛ هر گام عنوان، مدت، یادداشت و ایموجی خودش را دارد و ترتیبش قابل ویرایش است. اجراکنندهٔ تمام‌صفحه، زمان‌سنج، گام جاری و پیشرفت کل را نشان می‌دهد. زمان‌سنج هرگز خودکار به گام بعد نمی‌رود؛ خودتان «تکمیل گام»، «ردکردن گام» یا «انتقال به انتها» را انتخاب می‌کنید. گام‌ها را در رایانه یا تلفن با دستگیرهٔ کشیدن جابه‌جا کنید. چهار گزینهٔ پیشرفتهٔ آن در «تنظیمات ← زمان‌سنج» قرار دارند: آوای گام، لرزش، روشن نگه‌داشتن صفحه و نمایش پیش‌نمایش گام بعد.
 
 استودیوی ظاهر پنج پالت رنگی دارد: Lumen، Midnight، Slate، Zen Paper و Harbor؛ هرکدام در حالت روشن و تیره در دسترس‌اند. هشت طرح چیدمان نیز مستقل‌اند: برنامهٔ روزانه، برد، نمای هفتگی، کارت‌ها، فشرده، مسیر گام‌به‌گام، تمرکز بر کار جاری و نمای متنی. انتخاب رنگ، طرح را عوض نمی‌کند.
 

@@ -252,7 +252,7 @@ export function initRecurrences() {
       title: "New recurring task",
       fields: [
         { name: "title", label: "Title", type: "text", placeholder: "Weekly review", required: true },
-        { name: "tag", label: "Tag", type: "text", placeholder: "tracked" },
+        { name: "tag", label: "Tag", type: "text", placeholder: "work" },
         { name: "duration", label: "Duration", type: "text", value: "30m", required: true },
         {
           name: "freq", label: "Frequency", type: "select", value: "daily",

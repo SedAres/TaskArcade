@@ -190,6 +190,11 @@ export const api = {
   updateSubtask: (id, patch) => request("PATCH", `/api/subtasks/${id}`, patch),
   deleteSubtask: (id) => request("DELETE", `/api/subtasks/${id}`),
 
+  /* --- projects -------------------------------------------------------- */
+  createProject: (project) => request("POST", "/api/projects", project),
+  updateProject: (id, patch) => request("PATCH", `/api/projects/${encodeURIComponent(id)}`, patch),
+  deleteProject: (id) => request("DELETE", `/api/projects/${encodeURIComponent(id)}`),
+
   /* --- tags & aliases -------------------------------------------------- */
   saveTag: (tag) => request("POST", "/api/tags", tag),
   deleteTag: (name) => request("DELETE", `/api/tags/${encodeURIComponent(name)}`),

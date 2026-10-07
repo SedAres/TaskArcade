@@ -2,8 +2,8 @@
 TaskArcade V1.0 — undo/redo history.
 
 Every mutating service call funnels through `snapshot()`, which stores the
-complete application state (settings + tags + aliases + tasks + subtasks +
-recurrences) in the `snapshots` table. `undo` restores the newest snapshot and
+complete application state (settings, tags, aliases, projects, tasks, subtasks,
+recurrences and routines) in the `snapshots` table. `undo` restores the newest snapshot and
 pushes the current state onto the redo stack; `redo` does the inverse.
 
 A snapshot is small (a few KB of JSON) and the stack is capped by the
@@ -18,7 +18,7 @@ from typing import Any
 
 from .db import utc_now
 
-SNAPSHOT_TABLES = ["tags", "tag_aliases", "tasks", "subtasks", "recurrences", "routines"]
+SNAPSHOT_TABLES = ["tags", "tag_aliases", "projects", "tasks", "subtasks", "recurrences", "routines"]
 
 
 def capture(conn: sqlite3.Connection) -> dict[str, Any]:
@@ -67,7 +67,7 @@ def _trim(conn: sqlite3.Connection, kind: str, limit: int) -> None:
 def _restore(conn: sqlite3.Connection, payload: dict[str, Any]) -> None:
     tables = payload.get("tables", {})
     # Child rows first so FK cascades never wipe restored parents.
-    for table in ["subtasks", "tag_aliases", "recurrences", "tasks", "tags", "routines"]:
+    for table in ["subtasks", "tag_aliases", "recurrences", "tasks", "projects", "tags", "routines"]:
         rows = tables.get(table)
         if rows is None:
             continue

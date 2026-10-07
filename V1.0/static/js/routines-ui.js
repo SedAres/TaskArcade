@@ -4,6 +4,7 @@
 
 import { $, byId, h, icon, clear, store, emit, on, fmtDuration, formatNumber, calendarDayLabel } from "./core.js";
 import { api } from "./api.js";
+import { initDragAndDrop } from "./dnd.js";
 import { openSheet, closeSheet, confirmAction, toast } from "./ui.js";
 
 const t = (value) => window.TaskArcadeI18n?.t?.(value) ?? value;
@@ -201,6 +202,7 @@ function renderRunner() {
       }, [icon(run.status === "running" ? "pause" : "play"), run.status === "running" ? t("Pause") : t("Resume")]),
       h("button", { class: "btn btn-quiet", type: "button", onclick: () => sendRunCommand("complete_step") }, [icon("check"), t("Complete step")]),
       h("button", { class: "btn btn-quiet", type: "button", onclick: () => sendRunCommand("skip_step") }, [icon("skip"), t("Skip step")]),
+      h("button", { class: "btn btn-quiet routine-defer-action", type: "button", disabled: !steps.slice(index + 1).some((_, offset) => statuses[index + 1 + offset] === "pending"), onclick: () => sendRunCommand("move_to_end") }, [icon("arrow-right"), t("Move to end")]),
     ]),
   ]);
 
@@ -322,8 +324,8 @@ function readStepEditorRows() {
 
 function makeStepEditRow(step, index, total) {
   const minutes = Math.max(1, Math.ceil(Number(step.duration_seconds || 60) / 60));
-  return h("div", { class: "routine-step-edit", dataset: { stepIndex: String(index) } }, [
-    h("span", { class: "routine-step-edit-index" }, formatNumber(index + 1)),
+  return h("div", { class: "routine-step-edit", dataset: { id: String(index), stepIndex: String(index) } }, [
+    h("button", { class: "routine-step-edit-index routine-step-drag", type: "button", title: t("Drag to reorder step"), "aria-label": `${t("Drag to reorder step")} ${formatNumber(index + 1)}`, "aria-keyshortcuts": "Alt+ArrowUp Alt+ArrowDown" }, [icon("drag"), h("span", {}, formatNumber(index + 1))]),
     h("div", { class: "routine-step-edit-fields" }, [
       h("div", { class: "routine-step-edit-main" }, [
         h("input", { type: "text", maxlength: "160", value: step.title || "", placeholder: t("Step name"), dataset: { stepTitle: "1" }, "aria-label": `${t("Step")} ${index + 1} ${t("name")}` }),
@@ -349,6 +351,13 @@ function renderStepEditor(steps = []) {
   clear(container);
   const values = steps.length ? steps : [{ title: "", duration_seconds: 300, emoji: "", notes: "" }];
   values.forEach((step, index) => container.appendChild(makeStepEditRow(step, index, values.length)));
+  initDragAndDrop(container, {
+    selector: ".routine-step-edit",
+    handleSelector: ".routine-step-drag",
+    containerSelector: "#routineStepEditor",
+    keyboardReorder: false,
+    onDrop: () => renderStepEditor(readStepEditorRows()),
+  });
 }
 
 function openRoutineEditor(routine = null) {
@@ -456,16 +465,22 @@ async function createStarterRoutine() {
   }
 }
 
+function openRoutineRunner() {
+  // The runner's primary actions sit near the lower edge of the workspace.
+  // Clear stale success toasts rather than covering the controls on entry.
+  byId("toasts")?.replaceChildren();
+  emit("switch-tab", { tab: "routines" });
+}
+
 async function startRoutine(routine) {
   if (activeRun()?.routine_id === routine.id) {
-    emit("switch-tab", { tab: "routines" });
+    openRoutineRunner();
     return;
   }
   try {
     await api.startRoutine(routine.id);
     await reloadRoutineState();
-    emit("switch-tab", { tab: "routines" });
-    toast(t("Routine started"), { tone: "good" });
+    openRoutineRunner();
   } catch (error) {
     toast(t(error.message || "Could not start the routine."), { tone: "error" });
   }
@@ -590,11 +605,7 @@ function updateLiveRunner(run) {
   const key = `${run.id}:${run.current_step_index}`;
   if (expiredStepKey === key) return;
   expiredStepKey = key;
-  if (settingEnabled("routine_auto_advance", true)) {
-    void sendRunCommand("complete_step", 0);
-  } else {
-    void sendRunCommand("pause", 0).then(() => toast(t("Step timer finished. Complete or skip it when you are ready."), { tone: "info" }));
-  }
+  void sendRunCommand("pause", 0).then(() => toast(t("Time is up. Choose Complete step, Skip step, or Move to end."), { tone: "info" }));
 }
 
 function tickRoutineTimer() {
@@ -602,6 +613,9 @@ function tickRoutineTimer() {
 }
 
 export function renderRoutines() {
+  if (!activeRun() && byId("appRoot")?.dataset.tab === "routines" && byId("routineRunnerView") && !byId("routineRunnerView").hidden) {
+    emit("switch-tab", { tab: "routines", runner: false, scroll: false });
+  }
   renderTabBadge();
   renderRunner();
   renderRoutineCards();
@@ -621,6 +635,7 @@ export function initRoutineUI() {
     const fields = byId("routineStepEditor")?.querySelectorAll("[data-step-title]");
     fields?.[fields.length - 1]?.focus();
   });
+  byId("exitRoutineRunnerBtn")?.addEventListener("click", () => emit("switch-tab", { tab: "routines", runner: false }));
   byId("routineStepEditor")?.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-step-move], button[data-step-remove]");
     if (!button) return;
