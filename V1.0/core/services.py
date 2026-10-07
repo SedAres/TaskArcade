@@ -126,6 +126,7 @@ def serialize_task(row: sqlite3.Row, subtasks: list[dict[str, Any]] | None = Non
     return {
         "id": row["id"],
         "day_index": _as_int(row["day_index"], 1),
+        "project_id": _as_int(row["project_id"]) if "project_id" in row.keys() else 0,
         "title": row["title"],
         "notes": row["notes"] or "",
         "tag": row["tag"] or "",
@@ -542,6 +543,11 @@ def reorder_tags(conn: sqlite3.Connection, order: list[str]) -> None:
 # ===========================================================================
 # Task helpers
 # ===========================================================================
+def _project_service():
+    from . import projects as project_service
+    return project_service
+
+
 def task_row(conn: sqlite3.Connection, task_id: int) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM tasks WHERE id = ?", (_as_int(task_id),)).fetchone()
 
@@ -577,12 +583,13 @@ def insert_task(conn: sqlite3.Connection, data: dict[str, Any], day_index: int) 
     if order is None:
         order = next_order(conn, day_index)
     cursor = conn.execute(
-        "INSERT INTO tasks (day_index, title, notes, tag, priority, total_seconds, remaining_seconds, "
+        "INSERT INTO tasks (day_index, project_id, title, notes, tag, priority, total_seconds, remaining_seconds, "
         "order_index, done, pinned, scheduled_at, reminder_at, tomatoes_estimate, source, recurrence_id, "
         "created_at, updated_at, last_touched_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             day_index,
+            _project_service().validate_project_id(conn, data.get("project_id", 0)),
             str(data.get("title", "")).strip(),
             str(data.get("notes", "") or ""),
             tag,
@@ -678,6 +685,8 @@ def update_task(conn: sqlite3.Connection, task_id: int, data: dict[str, Any]) ->
             fields["tag"] = ensure_tag(conn, resolved)
         else:
             fields["tag"] = ""
+    if "project_id" in data:
+        fields["project_id"] = _project_service().validate_project_id(conn, data.get("project_id"))
     if "priority" in data:
         fields["priority"] = _clamp(_as_int(data["priority"]), 0, 3)
     if "pinned" in data:
@@ -967,11 +976,12 @@ def duplicate_task(conn: sqlite3.Connection, task_id: int) -> dict[str, Any]:
         raise KeyError("Task not found")
     history.push(conn, f"duplicate “{task['title'][:40]}”", limit=_as_int(get_setting(conn, "undo_limit", 40), 40))
     cursor = conn.execute(
-        "INSERT INTO tasks (day_index, title, notes, tag, priority, total_seconds, remaining_seconds, order_index, "
+        "INSERT INTO tasks (day_index, project_id, title, notes, tag, priority, total_seconds, remaining_seconds, order_index, "
         "done, pinned, scheduled_at, reminder_at, tomatoes_estimate, source, created_at, updated_at, last_touched_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '', '', ?, 'manual', ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '', '', ?, 'manual', ?, ?, ?)",
         (
             _as_int(task["day_index"]),
+            _as_int(task["project_id"]),
             f"{task['title']} (copy)",
             task["notes"] or "",
             task["tag"] or "",
@@ -1014,10 +1024,10 @@ def split_task(conn: sqlite3.Connection, task_id: int, pieces: int = 2, titles: 
     for index in range(1, pieces):
         label = (titles[index - 1] if titles and index - 1 < len(titles) else f"{task['title']} · part {index + 1}")
         cursor = conn.execute(
-            "INSERT INTO tasks (day_index, title, notes, tag, priority, total_seconds, remaining_seconds, "
+            "INSERT INTO tasks (day_index, project_id, title, notes, tag, priority, total_seconds, remaining_seconds, "
             "order_index, done, source, created_at, updated_at, last_touched_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'split', ?, ?, ?)",
-            (base_day, label, task["notes"] or "", task["tag"] or "", _as_int(task["priority"]),
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'split', ?, ?, ?)",
+            (base_day, _as_int(task["project_id"]), label, task["notes"] or "", task["tag"] or "", _as_int(task["priority"]),
              chunk, chunk, base_order + index, utc_now(), utc_now(), utc_now()),
         )
         created.append(int(cursor.lastrowid))
@@ -1670,6 +1680,7 @@ def full_state(conn: sqlite3.Connection, include_meta: bool = True) -> dict[str,
         "tags": tags,
         "aliases": alias_map(conn),
         "tasks": tasks,
+        "projects": _project_service().list_projects(conn),
         "recurrences": list_recurrences(conn),
         "templates": list_templates(conn),
         "routines": routine_service.list_routines(conn),
@@ -1711,7 +1722,7 @@ def resolve_aliases(conn: sqlite3.Connection) -> dict[str, str]:
 # ===========================================================================
 # Backup / restore
 # ===========================================================================
-EXPORT_TABLES = ["settings", "tags", "tag_aliases", "tasks", "subtasks", "recurrences", "day_logs", "templates", "routines", "routine_runs", "sessions"]
+EXPORT_TABLES = ["settings", "tags", "tag_aliases", "projects", "tasks", "subtasks", "recurrences", "day_logs", "templates", "routines", "routine_runs", "sessions"]
 
 
 def export_backup(conn: sqlite3.Connection) -> dict[str, Any]:
@@ -1735,7 +1746,7 @@ def import_backup(conn: sqlite3.Connection, payload: dict[str, Any], mode: str =
     if not isinstance(tables, dict) or not tables:
         raise ValueError("Backup file has no tables")
     if mode == "replace":
-        for table in ["subtasks", "tag_aliases", "recurrences", "tasks", "tags", "day_logs", "routine_runs", "routines", "templates", "sessions"]:
+        for table in ["subtasks", "tag_aliases", "recurrences", "tasks", "projects", "tags", "day_logs", "routine_runs", "routines", "templates", "sessions"]:
             conn.execute(f"DELETE FROM {table}")
 
     restored: dict[str, int] = {}

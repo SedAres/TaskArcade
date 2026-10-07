@@ -81,7 +81,7 @@ THEMES = [
         "tagline": "Clear daily agenda",
         "blurb": "A calm, time-aware day plan with clear next steps.",
         "default_scheme": "light",
-        "swatch": ["#FF6B4A", "#FFF6F1", "#241F1C"],
+        "swatch": ["#4F46E5", "#F4F6FB", "#1A2030"],
         "font": "sans",
         "radius": 16,
         "density": "cozy",
@@ -166,14 +166,6 @@ SORT_MODES = ["manual", "duration", "duration_desc", "priority", "alpha", "creat
 # ---------------------------------------------------------------------------
 DEFAULT_TAGS = [
     {
-        "name": "tracked",
-        "label": "Tracked",
-        "color": PALETTE[17]["hex"],
-        "icon": "eye",
-        "aliases": ["t", "tr", "trk"],
-        "default_minutes": 30,
-    },
-    {
         "name": "study",
         "label": "Study",
         "color": PALETTE[14]["hex"],
@@ -216,7 +208,7 @@ DEFAULT_TAGS = [
 ]
 
 DEFAULT_SAMPLE_TASKS = [
-    {"title": "Morning reset — plan the day", "tag": "tracked", "minutes": 10, "priority": 2},
+    {"title": "Morning reset — plan the day", "minutes": 10, "priority": 2},
     {"title": "Deep work block", "tag": "work", "minutes": 90, "priority": 3},
     {"title": "Study English", "tag": "study", "minutes": 60, "priority": 2},
     {"title": "Vacuum the house", "tag": "home", "minutes": 30, "priority": 1},
@@ -231,10 +223,10 @@ DEFAULT_TEMPLATES = [
         "kind": "task_set",
         "payload": {
             "tasks": [
-                {"title": "Plan the day", "tag": "tracked", "minutes": 10, "priority": 2},
+                {"title": "Plan the day", "minutes": 10, "priority": 2},
                 {"title": "Deep work block", "tag": "work", "minutes": 90, "priority": 3},
                 {"title": "Short break — stretch", "tag": "health", "minutes": 10},
-                {"title": "Review & note wins", "tag": "tracked", "minutes": 15},
+                {"title": "Review & note wins", "minutes": 15},
             ]
         },
     },
@@ -338,7 +330,7 @@ DEFAULT_SETTINGS = {
     "sort_mode": "manual",
     "group_mode": "day",           # day | tag | priority | none
     "theme": "lumen",
-    "scheme": "auto",
+    "scheme": "light",
     "density": "cozy",
     "accent": "",
     "radius": 16,
@@ -363,7 +355,6 @@ DEFAULT_SETTINGS = {
     "pomodoro_cycles": 4,
     "pomodoro_auto_start": 1,
     "pomodoro_sound": 1,
-    "routine_auto_advance": 1,
     "routine_sound": 1,
     "routine_vibrate": 0,
     "routine_keep_awake": 0,
@@ -425,7 +416,6 @@ SETTING_TYPES = {
     "pomodoro_cycles": int,
     "pomodoro_auto_start": int,
     "pomodoro_sound": int,
-    "routine_auto_advance": int,
     "routine_sound": int,
     "routine_vibrate": int,
     "routine_keep_awake": int,

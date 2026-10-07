@@ -56,6 +56,11 @@ TABLE_DDL: dict[str, str] = {
             FOREIGN KEY (tag_name) REFERENCES tags(tag_name) ON DELETE CASCADE
         )
     """,
+    "projects": """
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT
+        )
+    """,
     "tasks": """
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT
@@ -124,7 +129,7 @@ COLUMN_DDL: dict[str, dict[str, str]] = {
         "sort_mode": "TEXT NOT NULL DEFAULT 'manual'",
         "group_mode": "TEXT NOT NULL DEFAULT 'day'",
         "theme": "TEXT NOT NULL DEFAULT 'lumen'",
-        "scheme": "TEXT NOT NULL DEFAULT 'auto'",
+        "scheme": "TEXT NOT NULL DEFAULT 'light'",
         "density": "TEXT NOT NULL DEFAULT 'cozy'",
         "accent": "TEXT NOT NULL DEFAULT ''",
         "radius": "INTEGER NOT NULL DEFAULT 16",
@@ -149,7 +154,7 @@ COLUMN_DDL: dict[str, dict[str, str]] = {
         "pomodoro_cycles": "INTEGER NOT NULL DEFAULT 4",
         "pomodoro_auto_start": "INTEGER NOT NULL DEFAULT 1",
         "pomodoro_sound": "INTEGER NOT NULL DEFAULT 1",
-        "routine_auto_advance": "INTEGER NOT NULL DEFAULT 1",
+        "routine_auto_advance": "INTEGER NOT NULL DEFAULT 0",
         "routine_sound": "INTEGER NOT NULL DEFAULT 1",
         "routine_vibrate": "INTEGER NOT NULL DEFAULT 0",
         "routine_keep_awake": "INTEGER NOT NULL DEFAULT 0",
@@ -182,7 +187,18 @@ COLUMN_DDL: dict[str, dict[str, str]] = {
         "archived": "INTEGER NOT NULL DEFAULT 0",
         "created_at": "TEXT NOT NULL DEFAULT ''",
     },
+    "projects": {
+        "name": "TEXT NOT NULL DEFAULT ''",
+        "description": "TEXT NOT NULL DEFAULT ''",
+        "color": "TEXT NOT NULL DEFAULT '#4f46e5'",
+        "status": "TEXT NOT NULL DEFAULT 'active'",
+        "target_day": "INTEGER NOT NULL DEFAULT 0",
+        "sort_order": "INTEGER NOT NULL DEFAULT 0",
+        "created_at": "TEXT NOT NULL DEFAULT ''",
+        "updated_at": "TEXT NOT NULL DEFAULT ''",
+    },
     "tasks": {
+        "project_id": "INTEGER NOT NULL DEFAULT 0",
         "day_index": "INTEGER NOT NULL DEFAULT 1",
         "title": "TEXT NOT NULL DEFAULT ''",
         "notes": "TEXT NOT NULL DEFAULT ''",
@@ -307,6 +323,8 @@ COLUMN_DDL: dict[str, dict[str, str]] = {
 
 INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_tasks_day ON tasks(day_index, order_index)",
+    "CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id, archived, done)",
+    "CREATE INDEX IF NOT EXISTS idx_projects_status_order ON projects(status, sort_order)",
     "CREATE INDEX IF NOT EXISTS idx_tasks_tag ON tasks(tag)",
     "CREATE INDEX IF NOT EXISTS idx_tasks_done ON tasks(done)",
     "CREATE INDEX IF NOT EXISTS idx_subtasks_task ON subtasks(task_id)",
@@ -415,12 +433,33 @@ def init_db(seed_samples: bool | None = None) -> dict[str, Any]:
     if updates:
         values.append(1)
         conn.execute(f"UPDATE settings SET {', '.join(updates)} WHERE id = ?", values)
-    conn.execute("UPDATE settings SET updated_at = ? WHERE id = 1", (utc_now(),))
+    conn.execute("UPDATE settings SET updated_at = ?, routine_auto_advance = 0 WHERE id = 1", (utc_now(),))
 
     # starter tags + aliases -------------------------------------------------
     if conn.execute("SELECT COUNT(*) AS c FROM tags").fetchone()["c"] == 0:
         _seed_tags(conn, DEFAULT_TAGS)
         report["seeded"].append("tags")
+
+    # Retire the old built-in "tracked" tag and its shorthand alias. Existing
+    # task/recurrence references are safely detached so no UI continues to
+    # surface a tag the product no longer ships.
+    conn.execute("UPDATE tasks SET tag = '' WHERE lower(trim(tag)) = 'tracked'")
+    conn.execute("UPDATE recurrences SET tag = '' WHERE lower(trim(tag)) = 'tracked'")
+    conn.execute("DELETE FROM tag_aliases WHERE tag_name = 'tracked'")
+    conn.execute("DELETE FROM tags WHERE tag_name = 'tracked'")
+    for template in conn.execute("SELECT id, payload FROM templates").fetchall():
+        try:
+            payload = json.loads(template["payload"] or "{}")
+        except (TypeError, ValueError):
+            continue
+        changed = False
+        if isinstance(payload, dict):
+            for task in payload.get("tasks", []):
+                if isinstance(task, dict) and str(task.get("tag", "")).strip().lower() == "tracked":
+                    task.pop("tag", None)
+                    changed = True
+        if changed:
+            conn.execute("UPDATE templates SET payload = ?, updated_at = ? WHERE id = ?", (json.dumps(payload, ensure_ascii=False), utc_now(), template["id"]))
 
     # make sure every tag has at least a colour and a label -------------------
     for tag in conn.execute("SELECT * FROM tags").fetchall():

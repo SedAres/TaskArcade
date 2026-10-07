@@ -29,6 +29,9 @@ assert.equal(t("Read book — تا ۲۵ دقیقه دیگر"), "یادآوری �
 assert.equal(t("Added 2 tasks to Day 4"), "۲ وظیفه به روز ۴ افزوده شد");
 assert.equal(t("All four typefaces are bundled and load locally when selected. No external font service is contacted."), "هر چهار قلم همراه برنامه هستند و هنگام انتخاب از همین دستگاه بارگذاری می‌شوند؛ هیچ درخواستی به سرویس قلم بیرونی فرستاده نمی‌شود.");
 assert.equal(t("No tasks for this day"), "برای این روز وظیفه‌ای ندارید");
-assert.equal(t("#t"), "#t");
+assert.equal(t("Projects"), "پروژه‌ها");
+assert.equal(t("Move to end"), "بردن به انتهای فهرست");
+assert.equal(t("Timed steps wait for your explicit choice before advancing."), "گام‌های زمان‌دار تا انتخاب صریح شما جلو نمی‌روند.");
+assert.equal(t("#w"), "#w");
 
 console.log("Persian locale patterns and user-authored names passed.");

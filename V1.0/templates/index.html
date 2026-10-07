@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="lumen" data-scheme="auto" data-density="cozy" data-layout="agenda">
+<html lang="en" data-theme="lumen" data-scheme="light" data-density="cozy" data-layout="agenda">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/static/css/responsive.css" />
   <link rel="stylesheet" href="/static/css/rtl.css" />
   <link rel="stylesheet" href="/static/css/history-calendar.css" />
+  <link rel="stylesheet" href="/static/css/polish.css" />
 </head>
 <body class="booting">
 <!-- ======================================================================
@@ -72,6 +73,7 @@
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M15 6.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h.5" /></symbol>
   <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" /><path d="M17 9.5h1.5a2.5 2.5 0 0 1 0 5H17M4.5 21h12" /></symbol>
   <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13.5 6.4 5.8A2 2 0 0 1 8.3 4.5h7.4a2 2 0 0 1 1.9 1.3L20 13.5v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" /><path d="M4 13.5h4l1 2.5h6l1-2.5h4" /></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><path d="M4 4.5h16l1 4H3z" /><path d="M5 8.5v10A2 2 0 0 0 7 20.5h10a2 2 0 0 0 2-2v-10M9 12.5h6" /></symbol>
   <symbol id="i-drag" viewBox="0 0 24 24"><circle cx="9" cy="7" r="1.2" /><circle cx="15" cy="7" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="17" r="1.2" /><circle cx="15" cy="17" r="1.2" /></symbol>
   <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18" cy="12" r="1.6" /></symbol>
   <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 5.5H6a2 2 0 0 0 2 3M16 5.5h2a2 2 0 0 1-2 3M10.5 13v3h3v-3M8 20h8" /></symbol>
@@ -131,6 +133,9 @@
     </button>
     <button class="tab" role="tab" data-tab="plan" id="tabPlan" aria-controls="viewPlan" aria-selected="false">
       <svg class="i"><use href="#i-calendar" /></svg><span>Plan</span>
+    </button>
+    <button class="tab" role="tab" data-tab="projects" id="tabProjects" aria-controls="viewProjects" aria-selected="false">
+      <svg class="i"><use href="#i-briefcase" /></svg><span>Projects</span>
     </button>
     <button class="tab" role="tab" data-tab="routines" id="tabRoutines" aria-controls="viewRoutines" aria-selected="false">
       <svg class="i"><use href="#i-list" /></svg><span>Routines</span>
@@ -408,6 +413,57 @@ Gym #he 1h !"></textarea>
     </section>
 
     <!-- ================================================================
+         VIEW: PROJECTS
+         ================================================================ -->
+    <section class="view projects-view" id="viewProjects" role="tabpanel" aria-labelledby="tabProjects" hidden>
+      <header class="projects-page-head">
+        <div class="projects-heading-copy">
+          <span class="eyebrow">Outcomes, made visible</span>
+          <h1>Projects</h1>
+          <p>Bring related tasks together, see momentum at a glance, and keep every next step close.</p>
+        </div>
+        <button class="btn btn-primary projects-create-btn" id="newProjectBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> New project</button>
+      </header>
+
+      <section class="projects-summary" aria-label="Project overview">
+        <article class="projects-summary-card projects-summary-feature">
+          <span class="projects-summary-icon"><svg class="i"><use href="#i-briefcase" /></svg></span>
+          <div><strong id="projectsActiveCount">0</strong><span>Open projects</span></div>
+        </article>
+        <article class="projects-summary-card">
+          <span class="projects-summary-icon"><svg class="i"><use href="#i-list" /></svg></span>
+          <div><strong id="projectsTaskCount">0</strong><span>Open tasks across projects</span></div>
+        </article>
+        <article class="projects-summary-card">
+          <span class="projects-summary-icon"><svg class="i"><use href="#i-check" /></svg></span>
+          <div><strong id="projectsCompletedCount">0</strong><span>Completed projects</span></div>
+        </article>
+      </section>
+
+      <section class="projects-section">
+        <header class="projects-section-head">
+          <div><span class="eyebrow">Your portfolio</span><h2>Work in motion</h2></div>
+          <label class="project-filter-field" for="projectFilter"><span>Show</span>
+            <select id="projectFilter" aria-label="Filter projects">
+              <option value="open">Open &amp; completed</option>
+              <option value="active">Active only</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+              <option value="all">All projects</option>
+            </select>
+          </label>
+        </header>
+        <div class="projects-grid" id="projectsGrid"></div>
+        <div class="projects-empty" id="projectsEmpty" hidden>
+          <span class="projects-empty-icon"><svg class="i"><use href="#i-sparkles" /></svg></span>
+          <h2 id="projectsEmptyTitle">Give your work a home</h2>
+          <p id="projectsEmptyNote">Create a project, then link tasks to it from the task editor.</p>
+          <button class="btn btn-primary" id="createFirstProjectBtn" type="button">Create your first project</button>
+        </div>
+      </section>
+    </section>
+
+    <!-- ================================================================
          VIEW: ROUTINES
          ================================================================ -->
     <section class="view routines-view" id="viewRoutines" role="tabpanel" aria-labelledby="tabRoutines" hidden>
@@ -422,8 +478,6 @@ Gym #he 1h !"></textarea>
           <button class="btn btn-primary" id="createRoutineBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> New routine</button>
         </div>
       </header>
-
-      <section class="routine-runner-panel" id="routineRunnerPanel" aria-live="polite"></section>
 
       <div class="routine-library-grid">
         <section class="panel routine-library-panel">
@@ -441,6 +495,17 @@ Gym #he 1h !"></textarea>
           <div class="routine-run-history" id="routineRunHistory"></div>
         </section>
       </div>
+    </section>
+
+    <!-- ================================================================
+         VIEW: FULL-PAGE ROUTINE RUNNER
+         ================================================================ -->
+    <section class="view routine-runner-view" id="routineRunnerView" role="tabpanel" aria-labelledby="tabRoutines" hidden>
+      <header class="routine-runner-page-head">
+        <div><span class="eyebrow">Guided session</span><h1>One step at a time</h1><p>Your progress is saved as you go. The next step is always your choice.</p></div>
+        <button class="btn btn-quiet" id="exitRoutineRunnerBtn" type="button"><svg class="i"><use href="#i-arrow-left" /></svg> Back to routines</button>
+      </header>
+      <section class="routine-runner-panel routine-runner-fullpage" id="routineRunnerPanel" aria-live="polite"></section>
     </section>
 
     <!-- ================================================================
@@ -633,7 +698,7 @@ Gym #he 1h !"></textarea>
             <div><span class="eyebrow">Vocabulary</span><h3>Tags &amp; aliases</h3></div>
             <button class="chip" id="addTagBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> New tag</button>
           </header>
-          <p class="panel-note">Aliases make typing fast: <code>#t</code> can mean <code>#tracked</code>. Aliases are matched case-insensitively anywhere a tag can be typed.</p>
+          <p class="panel-note">Aliases make typing fast: for example, <code>#w</code> resolves to <code>#work</code>. Aliases are matched case-insensitively anywhere a tag can be typed.</p>
           <div class="tag-table" id="tagTable"></div>
         </section>
 
@@ -684,7 +749,8 @@ Gym #he 1h !"></textarea>
   <nav class="mobile-nav" id="mobileNav" aria-label="Primary">
     <button class="mobile-tab is-active" data-tab="today" type="button"><svg class="i"><use href="#i-bolt" /></svg><span>Now</span></button>
     <button class="mobile-tab" data-tab="plan" type="button"><svg class="i"><use href="#i-calendar" /></svg><span>Plan</span></button>
-    <button class="mobile-tab" data-tab="routines" type="button"><svg class="i"><use href="#i-list" /></svg><span>Routine</span></button>
+    <button class="mobile-tab" data-tab="projects" type="button" aria-label="Projects"><svg class="i"><use href="#i-briefcase" /></svg><span>Projects</span></button>
+    <button class="mobile-tab" data-tab="routines" type="button"><svg class="i"><use href="#i-list" /></svg><span>Routines</span></button>
     <button class="mobile-tab mobile-tab-add" data-action="quick-add" type="button" aria-label="Quick add"><svg class="i"><use href="#i-plus" /></svg></button>
     <button class="mobile-tab" data-tab="focus" type="button"><svg class="i"><use href="#i-clock" /></svg><span>Focus</span></button>
     <button class="mobile-tab" data-tab="insights" type="button"><svg class="i"><use href="#i-chart" /></svg><span>Stats</span></button>
@@ -692,6 +758,32 @@ Gym #he 1h !"></textarea>
   </nav>
 
   <div class="scrim" id="scrim" hidden></div>
+</div>
+
+<!-- ======================================================================
+     Sheet: project editor
+     ====================================================================== -->
+<div class="sheet" id="projectSheet" role="dialog" aria-modal="true" aria-labelledby="projectSheetTitle" hidden>
+  <div class="sheet-panel sheet-panel-compact project-sheet-panel">
+    <header class="sheet-head">
+      <div><span class="eyebrow">Project details</span><h2 id="projectSheetTitle">New project</h2></div>
+      <button class="icon-btn" id="projectSheetClose" type="button" aria-label="Close"><svg class="i"><use href="#i-x" /></svg></button>
+    </header>
+    <div class="sheet-body">
+      <form class="project-form" id="projectForm">
+        <div class="project-color-banner" id="projectColorPreview"><span class="project-color-mark"><svg class="i"><use href="#i-briefcase" /></svg></span><span><strong>Make the outcome clear</strong><small>Your tasks stay in the timeline and can be linked to this project.</small></span></div>
+        <label class="field"><span>Project name</span><input id="projectName" type="text" maxlength="100" placeholder="e.g. Launch the new website" required /></label>
+        <label class="field"><span>Description <small>Optional</small></span><textarea id="projectDescription" rows="3" maxlength="1200" placeholder="What does success look like?"></textarea></label>
+        <div class="field-row">
+          <label class="field"><span>Color</span><div class="project-color-control"><input id="projectColor" type="color" value="#4f46e5" /><span>Choose a signature color</span></div></label>
+          <label class="field"><span>Status</span><select id="projectStatus"><option value="active">Active</option><option value="on_hold">On hold</option><option value="completed">Completed</option><option value="archived">Archived</option></select></label>
+        </div>
+        <label class="field"><span>Target day <small>Optional timeline day</small></span><input id="projectTargetDay" type="number" min="1" max="999999" placeholder="No target" /></label>
+        <p class="form-error" id="projectFormError" role="alert"></p>
+        <div class="project-form-actions"><button class="btn btn-quiet" id="projectCancelBtn" type="button">Cancel</button><button class="btn btn-primary" id="projectSaveBtn" type="submit">Save project</button></div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- ======================================================================
@@ -809,7 +901,7 @@ Gym #he 1h !"></textarea>
         </div>
 
         <div class="routine-step-editor-head">
-          <div><h3>Ordered steps</h3><p>Each step needs a title and a duration. Use the arrows to change its order.</p></div>
+          <div><h3>Ordered steps</h3><p>Each step needs a title and duration. Drag its handle to reorder on desktop or phone.</p></div>
           <button class="btn btn-quiet btn-sm" id="addRoutineStepBtn" type="button"><svg class="i"><use href="#i-plus" /></svg> Add step</button>
         </div>
         <div class="routine-step-editor" id="routineStepEditor"></div>
@@ -1011,11 +1103,7 @@ Gym #he 1h !"></textarea>
         </div>
         <details class="advanced-settings routine-advanced-settings">
           <summary>Advanced routine runner</summary>
-          <p class="block-note">Five optional controls tune the step runner. These settings do not change your saved routines.</p>
-          <div class="switch-row">
-            <div><strong>Auto-advance timed steps</strong><small>When the countdown reaches zero, complete this step and begin the next one.</small></div>
-            <button class="switch" id="routineAutoAdvanceSwitch" type="button" role="switch" aria-checked="true"><span></span></button>
-          </div>
+          <p class="block-note">Four optional controls tune the runner. Timed steps always wait for your explicit choice before advancing.</p>
           <div class="switch-row">
             <div><strong>Play a step chime</strong><small>Use a short, locally generated tone when a step changes.</small></div>
             <button class="switch" id="routineSoundSwitch" type="button" role="switch" aria-checked="true"><span></span></button>
@@ -1100,17 +1188,21 @@ Gym #he 1h !"></textarea>
         <textarea id="editNotes" rows="2" placeholder="Context, links, next step…"></textarea>
       </div>
 
-      <div class="field-row">
+      <div class="field-row task-categorization-row">
         <div class="field">
           <label for="editTag">Tag</label>
           <input type="text" id="editTag" list="tagOptions" spellcheck="false" />
           <datalist id="tagOptions"></datalist>
         </div>
         <div class="field">
-          <label for="editDay">Virtual day</label>
-          <input type="number" id="editDay" min="1" />
-          <small id="editDayDateHint"></small>
+          <label for="editProject">Project</label>
+          <select id="editProject"><option value="0">No project</option></select>
         </div>
+      </div>
+      <div class="field">
+        <label for="editDay">Virtual day</label>
+        <input type="number" id="editDay" min="1" />
+        <small id="editDayDateHint"></small>
       </div>
 
       <div class="field">
@@ -1314,8 +1406,8 @@ Gym #he 1h !"></textarea>
         <p class="guide-intro">A friendly, practical guide to planning time, running focus sessions, understanding your statistics, and correcting past records.</p>
         <nav class="guide-toc" aria-label="Guide contents"><a href="#guide-start">Start here</a><a href="#guide-plan">Plan tasks</a><a href="#guide-routines">Routines</a><a href="#guide-focus">Focus timer</a><a href="#guide-insights">Analytics</a><a href="#guide-history">Past records</a><a href="#guide-calendar">Persian calendar</a><a href="#guide-customize">Customize &amp; protect data</a></nav>
         <section id="guide-start"><h3>1. Start with one day</h3><p>TaskArcade organizes work into numbered virtual days. A day advances only when you choose <strong>Finish day</strong>; moving the day counter is a navigation choice and does not move tasks. The calendar can associate each virtual day with a Gregorian or Solar Hijri date.</p><p>Begin in <strong>Now</strong>. The highlighted task is the next suggested action. Select another task from the list, or add a new one in the quick-add field.</p></section>
-        <section id="guide-plan"><h3>2. Plan tasks and estimate time</h3><p>Write a clear title, choose a useful estimate, and optionally add a tag, priority, clock time, note, repeat rule, or subtasks. The task editor lets you change every field later.</p><p><strong>Quick-add examples</strong> (the syntax is optional; ordinary Persian or English titles work too):</p><ul class="guide-examples"><li><code>Prepare report #work 90m !! @09:30</code> — tag, estimate, priority and scheduled time.</li><li><code>Review notes #study ~2p</code> — estimate two pomodoro cycles.</li><li><code>Walk outside *weekdays +fill bottle</code> — repeat on workdays and add a subtask.</li><li><code>Plan the trip &gt;compare train times ^</code> — save a note and pin the task.</li></ul><p><code>#t</code> can be an alias for <code>#tracked</code>. Manage tags and aliases in <strong>Library → Tags &amp; aliases</strong>. Aliases are customizable; they do not change the saved task title.</p><p>Priority markers are <code>!</code> low, <code>!!</code> medium and <code>!!!</code> high. A bare duration at the end of the line is also understood, such as <code>Read 25m</code>. Farsi digits and duration words such as «۹۰ دقیقه» and «۱ ساعت» are accepted.</p></section>
-        <section id="guide-routines"><h3>3. Build and run routines</h3><p>Open <strong>Routines</strong>, create a routine, and add ordered steps with a duration, optional note and emoji. Use the arrow controls to reorder steps. You can edit a saved routine later; an active run keeps the step snapshot it started with.</p><p>Start a routine to open the guided runner. It shows the current step, live countdown, next step, total remaining time and overall progress. Pause or resume, complete or skip a step, or stop the run. Completed and stopped attempts remain in run history. The five optional runner controls are under <strong>Settings → Timer → Advanced routine runner</strong>; they control auto-advance, a locally generated chime, supported-device vibration, screen wake lock, and the next-step preview.</p><p>On first use, select <strong>Try a starter</strong> to add and begin an editable morning sequence. The runner is designed for phones as well as desktop screens.</p></section>
+        <section id="guide-plan"><h3>2. Plan tasks and estimate time</h3><p>Write a clear title, choose a useful estimate, and optionally add a tag, priority, clock time, note, repeat rule, or subtasks. Link a task to a project in the task editor; you can change every field later.</p><p><strong>Quick-add examples</strong> (the syntax is optional; ordinary Persian or English titles work too):</p><ul class="guide-examples"><li><code>Prepare report #work 90m !! @09:30</code> — tag, estimate, priority and scheduled time.</li><li><code>Review notes #study ~2p</code> — estimate two pomodoro cycles.</li><li><code>Walk outside *weekdays +fill bottle</code> — repeat on workdays and add a subtask.</li><li><code>Plan the trip &gt;compare train times ^</code> — save a note and pin the task.</li></ul><p><code>#w</code> resolves to <code>#work</code> by default; aliases can be customized. Manage tags and aliases in <strong>Library → Tags &amp; aliases</strong>. Aliases are customizable; they do not change the saved task title.</p><p>Priority markers are <code>!</code> low, <code>!!</code> medium and <code>!!!</code> high. A bare duration at the end of the line is also understood, such as <code>Read 25m</code>. Farsi digits and duration words such as «۹۰ دقیقه» and «۱ ساعت» are accepted.</p></section>
+        <section id="guide-routines"><h3>3. Build and run routines</h3><p>Open <strong>Routines</strong>, create a routine, and add ordered steps with a duration, optional note and emoji. Drag a step using its handle on desktop or phone, or use the arrow controls. You can edit a saved routine later; an active run keeps the step snapshot it started with.</p><p>Start a routine to open the guided runner. It shows the current step, live countdown, next step, total remaining time and overall progress. Pause or resume, then choose Complete step, Skip step, or Move to end; the runner never advances automatically. Stop the run whenever you like. Completed and stopped attempts remain in run history. The optional runner controls are under <strong>Settings → Timer → Advanced routine runner</strong>; they tune the step chime, supported-device vibration, screen wake lock, and next-step preview. A timer never advances a step automatically: choose Complete step, Skip step, or Move to end.</p><p>On first use, select <strong>Try a starter</strong> to add and begin an editable morning sequence. The runner is designed for phones as well as desktop screens.</p></section>
         <section id="guide-focus"><h3>4. Use the focus timer</h3><p>Open <strong>Focus</strong>, select a task, and start a focus interval. The classic, deep-work and sprint presets can be adjusted in Settings. Pausing, resuming and stopping a session are safe; completed work is recorded in the session log.</p><p>Task duration is an estimate. The task editor shows both the planned duration and the time already elapsed. Change the elapsed value directly, or use the five-minute adjustment buttons. Changing the estimate preserves elapsed progress unless you explicitly edit it.</p></section>
         <section id="guide-insights"><h3>5. Read the analytics</h3><p>Choose a 7-day, 30-day, 90-day, annual or all-history reporting period. Cards summarize completion, focused time, time-estimate accuracy, goal days, session consistency and change versus the previous period. Charts show daily activity, focus patterns, tags and streaks.</p><p>Planned task time and actual focus-session time are different measures. A blank day in the daily series is intentional: it prevents averages from ignoring quiet days. Select a chart mark or a row under <strong>Historical days</strong> to open the full day record.</p></section>
         <section id="guide-history"><h3>6. Correct a past day</h3><p>Past records are not read-only. In Analytics, choose a day to edit its journal, mood and capacity; add a task; edit task details, completion, estimate, elapsed time, tag, priority and subtasks; or correct, move, or remove a focus session. Changes recalculate the relevant analytics and are included in undo history.</p><p>Aggregate totals are derived from tasks and focus sessions. Edit the source records rather than typing over a computed total; the dashboard will update from those source records.</p></section>
@@ -1327,8 +1419,8 @@ Gym #he 1h !"></textarea>
         <p class="guide-intro">راهنمایی کاربردی برای برنامه‌ریزی زمان، اجرای جلسه‌های تمرکز، فهم گزارش‌ها و اصلاح اطلاعات روزهای گذشته.</p>
         <nav class="guide-toc" aria-label="فهرست راهنما"><a href="#guide-start-fa">شروع سریع</a><a href="#guide-plan-fa">برنامه‌ریزی وظایف</a><a href="#guide-routines-fa">روال‌ها</a><a href="#guide-focus-fa">زمان‌سنج تمرکز</a><a href="#guide-insights-fa">تحلیل‌ها</a><a href="#guide-history-fa">ویرایش گذشته</a><a href="#guide-calendar-fa">تقویم شمسی</a><a href="#guide-customize-fa">شخصی‌سازی و نگهداری داده</a></nav>
         <section id="guide-start-fa"><h3>۱. با یک روز شروع کنید</h3><p>تسک‌آرکید کارها را در روزهای مجازی شماره‌گذاری‌شده مرتب می‌کند. روز فقط با انتخاب «پایان روز» جلو می‌رود؛ تغییر شمارندهٔ روز صرفاً برای جابه‌جایی میان روزهاست و وظایف را منتقل نمی‌کند. می‌توانید برای هر روز مجازی، تاریخ میلادی یا شمسی در نظر بگیرید.</p><p>کار را از نمای «اکنون» آغاز کنید. وظیفهٔ برجسته، پیشنهاد بعدی برنامه است. از فهرست وظیفهٔ دیگری را انتخاب کنید یا در کادر افزودن سریع، مورد تازه‌ای بنویسید.</p></section>
-        <section id="guide-plan-fa"><h3>۲. وظایف و برآورد زمان</h3><p>عنوانی روشن بنویسید و مدت‌زمان تقریبی را مشخص کنید. در صورت نیاز، برچسب، اولویت، ساعت انجام، یادداشت، قاعدهٔ تکرار یا گام‌های فرعی هم بیفزایید. تمام این موارد بعداً از ویرایشگر وظیفه قابل تغییرند.</p><p><strong>چند نمونه برای افزودن سریع</strong> (نوشتن این نشانه‌ها اختیاری است و عنوان فارسی یا انگلیسی معمولی هم پذیرفته می‌شود):</p><ul class="guide-examples"><li><code>Prepare report #work 90m !! @09:30</code> — برچسب، مدت، اولویت و ساعت برنامه‌ریزی.</li><li><code>Review notes #study ~2p</code> — برآورد دو چرخهٔ پومودورو.</li><li><code>Walk outside *weekdays +fill bottle</code> — تکرار در روزهای کاری و افزودن یک گام.</li><li><code>Plan the trip &gt;compare train times ^</code> — ثبت یادداشت و سنجاق‌کردن وظیفه.</li></ul><p><code>#t</code> می‌تواند نام کوتاه <code>#tracked</code> باشد. برچسب‌ها و نام‌های کوتاه را در «کتابخانه ← برچسب‌ها و نام‌های کوتاه» مدیریت کنید. تغییر نام کوتاه، عنوان ذخیره‌شدهٔ وظیفه را عوض نمی‌کند.</p><p>نشانه‌های اولویت <code>!</code> کم، <code>!!</code> متوسط و <code>!!!</code> زیاد هستند. مدت‌زمان را می‌توان در انتهای خط هم نوشت؛ مانند «مطالعه ۲۵ دقیقه». رقم‌های فارسی و عبارت‌هایی مثل «۹۰ دقیقه» و «۱ ساعت» نیز پذیرفته می‌شوند.</p></section>
-        <section id="guide-routines-fa"><h3>۳. ساخت و اجرای روال</h3><p>در بخش «روال‌ها» یک توالی بسازید و گام‌ها را به‌ترتیب بچینید. برای هر گام می‌توانید مدت، یادداشت و ایموجی تعیین کنید و با دکمه‌های پیکان ترتیب را تغییر دهید. ویرایش روال ذخیره‌شده هر زمان ممکن است؛ اجرای در حال انجام، نسخهٔ گام‌هایی را که با آن شروع شده حفظ می‌کند.</p><p>با شروع روال، اجراکنندهٔ گام‌به‌گام باز می‌شود. گام جاری، زمان‌سنج، گام بعد، زمان باقی‌ماندهٔ کل و میزان پیشرفت را یک‌جا می‌بینید. می‌توانید مکث کنید، ادامه دهید، گام را تکمیل یا رد کنید، یا اجرا را متوقف کنید. اجراهای کامل‌شده و متوقف‌شده در سابقه می‌مانند. پنج گزینهٔ اختیاری اجراکننده در <strong>تنظیمات ← زمان‌سنج ← تنظیمات پیشرفتهٔ اجراکنندهٔ روال</strong> قرار دارند: رفتن خودکار به گام بعد، آوای محلی، لرزش در دستگاه‌های پشتیبانی‌شده، روشن نگه‌داشتن صفحه و نمایش پیش‌نمایش گام بعد.</p><p>برای شروع سریع، «شروع با نمونه» را انتخاب کنید؛ یک روال صبحگاهیِ قابل ویرایش افزوده و اجرا می‌شود. این اجراکننده برای تلفن همراه و رایانه طراحی شده است.</p></section>
+        <section id="guide-plan-fa"><h3>۲. وظایف و برآورد زمان</h3><p>عنوانی روشن بنویسید و مدت‌زمان تقریبی را مشخص کنید. در صورت نیاز، برچسب، اولویت، ساعت انجام، یادداشت، قاعدهٔ تکرار یا گام‌های فرعی هم بیفزایید. وظیفه را از ویرایشگر به یک پروژه پیوند دهید؛ همهٔ این موارد بعداً قابل تغییرند.</p><p><strong>چند نمونه برای افزودن سریع</strong> (نوشتن این نشانه‌ها اختیاری است و عنوان فارسی یا انگلیسی معمولی هم پذیرفته می‌شود):</p><ul class="guide-examples"><li><code>Prepare report #work 90m !! @09:30</code> — برچسب، مدت، اولویت و ساعت برنامه‌ریزی.</li><li><code>Review notes #study ~2p</code> — برآورد دو چرخهٔ پومودورو.</li><li><code>Walk outside *weekdays +fill bottle</code> — تکرار در روزهای کاری و افزودن یک گام.</li><li><code>Plan the trip &gt;compare train times ^</code> — ثبت یادداشت و سنجاق‌کردن وظیفه.</li></ul><p><code>#w</code> به‌طور پیش‌فرض به <code>#work</code> اشاره می‌کند و نام‌های کوتاه قابل تغییرند. برچسب‌ها و نام‌های کوتاه را در «کتابخانه ← برچسب‌ها و نام‌های کوتاه» مدیریت کنید. تغییر نام کوتاه، عنوان ذخیره‌شدهٔ وظیفه را عوض نمی‌کند.</p><p>نشانه‌های اولویت <code>!</code> کم، <code>!!</code> متوسط و <code>!!!</code> زیاد هستند. مدت‌زمان را می‌توان در انتهای خط هم نوشت؛ مانند «مطالعه ۲۵ دقیقه». رقم‌های فارسی و عبارت‌هایی مثل «۹۰ دقیقه» و «۱ ساعت» نیز پذیرفته می‌شوند.</p></section>
+        <section id="guide-routines-fa"><h3>۳. ساخت و اجرای روال</h3><p>در بخش «روال‌ها» یک توالی بسازید و گام‌ها را به‌ترتیب بچینید. برای هر گام می‌توانید مدت، یادداشت و ایموجی تعیین کنید. ترتیب را با کشیدن دستگیره در رایانه یا تلفن، یا با دکمه‌های پیکان تغییر دهید. ویرایش روال ذخیره‌شده هر زمان ممکن است؛ اجرای در حال انجام، نسخهٔ گام‌هایی را که با آن شروع شده حفظ می‌کند.</p><p>با شروع روال، اجراکنندهٔ گام‌به‌گام باز می‌شود. گام جاری، زمان‌سنج، گام بعد، زمان باقی‌ماندهٔ کل و میزان پیشرفت را یک‌جا می‌بینید. می‌توانید مکث کنید و ادامه دهید؛ اما زمان‌سنج هیچ گامی را خودکار جلو نمی‌برد. برای پیش‌رفتن، خودتان «تکمیل گام»، «ردکردن گام» یا «انتقال به انتها» را انتخاب کنید و هر زمان خواستید اجرا را متوقف کنید. اجراهای کامل‌شده و متوقف‌شده در سابقه می‌مانند. چهار گزینهٔ اختیاری اجراکننده در <strong>تنظیمات ← زمان‌سنج ← تنظیمات پیشرفتهٔ اجراکنندهٔ روال</strong> قرار دارند: آوای پایان گام، لرزش در دستگاه‌های پشتیبانی‌شده، روشن نگه‌داشتن صفحه و نمایش پیش‌نمایش گام بعد.</p><p>برای شروع سریع، «شروع با نمونه» را انتخاب کنید؛ یک روال صبحگاهیِ قابل ویرایش افزوده و اجرا می‌شود. این اجراکننده برای تلفن همراه و رایانه طراحی شده است.</p></section>
         <section id="guide-focus-fa"><h3>۴. استفاده از زمان‌سنج تمرکز</h3><p>بخش «تمرکز» را باز کنید، یک وظیفه برگزینید و بازهٔ تمرکز را آغاز کنید. الگوهای کلاسیک، کار عمیق و سریع را می‌توانید در تنظیمات تغییر دهید. مکث، ادامه و توقف جلسه امن است و نتیجه در گزارش جلسه‌ها ثبت می‌شود.</p><p>مدت وظیفه یک برآورد است. ویرایشگر، مدت برنامه‌ریزی‌شده و زمان سپری‌شده را جداگانه نشان می‌دهد. می‌توانید زمان سپری‌شده را مستقیم بنویسید یا با دکمه‌های پنج‌دقیقه‌ای تغییر دهید. با تغییر برآورد، زمان سپری‌شده حفظ می‌شود؛ مگر آن‌که خودتان آن را ویرایش کنید.</p></section>
         <section id="guide-insights-fa"><h3>۵. خواندن گزارش‌های تحلیلی</h3><p>بازهٔ ۷، ۳۰ یا ۹۰ روزه، یک سال یا تمام سابقه را انتخاب کنید. کارت‌ها میزان تکمیل، زمان تمرکز، دقت برآورد مدت، روزهای رسیدن به هدف، نظم جلسه‌ها و تغییر نسبت به بازهٔ قبل را خلاصه می‌کنند. نمودارها فعالیت روزانه، الگوی تمرکز، سهم برچسب‌ها و تداوم را نشان می‌دهند.</p><p>زمان برنامه‌ریزی‌شده با زمان واقعی جلسه‌های تمرکز یکی نیست. روزهای بدون فعالیت هم در نمودار روزانه دیده می‌شوند تا میانگین فقط بر اساس روزهای شلوغ محاسبه نشود. روی نقطه‌ای از نمودار یا روزی در فهرست «روزهای گذشته» بزنید تا اطلاعات کامل آن روز باز شود.</p></section>
         <section id="guide-history-fa"><h3>۶. اصلاح اطلاعات روزهای گذشته</h3><p>اطلاعات روزهای قبل فقط برای مشاهده نیستند. در بخش تحلیل‌ها، روز دلخواه را باز کنید تا یادداشت، حال‌وهوا و ظرفیت آن روز را ویرایش کنید؛ وظیفه بیفزایید؛ جزئیات، وضعیت تکمیل، برآورد، زمان سپری‌شده، برچسب، اولویت و گام‌های وظیفه را اصلاح کنید؛ یا جلسهٔ تمرکز را ویرایش، جابه‌جا یا حذف کنید. گزارش‌ها پس از تغییر به‌روز می‌شوند و تغییرها در سابقهٔ بازگشت ثبت می‌گردند.</p><p>جمع‌ها از روی وظایف و جلسه‌های تمرکز محاسبه می‌شوند؛ برای اصلاح یک جمع، اطلاعات پایهٔ همان وظیفه یا جلسه را تغییر دهید تا گزارش نیز درست به‌روزرسانی شود.</p></section>

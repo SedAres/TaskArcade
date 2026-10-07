@@ -258,7 +258,7 @@ def command_run(conn: sqlite3.Connection, run_id: int, data: dict[str, Any]) -> 
         raise KeyError("Routine run not found")
     run = serialize_run(row)
     action = str(data.get("action", "") or "").strip().lower().replace("-", "_")
-    if action not in {"checkpoint", "pause", "resume", "complete_step", "skip_step", "stop"}:
+    if action not in {"checkpoint", "pause", "resume", "complete_step", "skip_step", "move_to_end", "stop"}:
         raise ValueError("Unknown routine action")
     if run["status"] not in ("running", "paused"):
         raise ValueError("This routine is no longer active")
@@ -285,6 +285,30 @@ def command_run(conn: sqlite3.Connection, run_id: int, data: dict[str, Any]) -> 
             (remaining, elapsed_after, now, now, run["id"]),
         )
         _emit(conn, "routine.run.stop", title=run["name"], routine_id=run["routine_id"], meta={"run_id": run["id"]})
+    elif action == "move_to_end":
+        step_index = run["current_step_index"]
+        steps = list(run["steps"])
+        statuses = list(run["step_statuses"])
+        if step_index >= len(steps) - 1:
+            raise ValueError("This step is already at the end of the routine")
+        step = steps.pop(step_index)
+        statuses.pop(step_index)
+        steps.append(step)
+        statuses.append("pending")
+        next_index = next((i for i, status in enumerate(statuses) if status == "pending"), None)
+        if next_index is None or next_index == len(steps) - 1:
+            raise ValueError("There is no later step to move ahead of")
+        statuses[next_index] = "active"
+        new_status = "paused" if run["status"] == "paused" else "running"
+        next_remaining = _int(steps[next_index].get("duration_seconds"))
+        conn.execute(
+            "UPDATE routine_runs SET steps_snapshot = ?, step_statuses_json = ?, status = ?, current_step_index = ?, "
+            "remaining_seconds = ?, elapsed_seconds = ?, ended_at = '', paused_at = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(steps, ensure_ascii=False), json.dumps(statuses), new_status, next_index, next_remaining,
+             elapsed_after, now if new_status == "paused" else "", now, run["id"]),
+        )
+        _emit(conn, "routine.step.move_end", title=step.get("title", ""), routine_id=run["routine_id"],
+              meta={"run_id": run["id"], "step_index": step_index, "new_index": len(steps) - 1})
     else:
         step_index = run["current_step_index"]
         statuses = list(run["step_statuses"])

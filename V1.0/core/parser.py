@@ -18,7 +18,7 @@ Grammar (all tokens optional except a title):
     last token        bare duration ("Clean room 45m")
 
 Alias resolution is case-insensitive and can be constrained with a prefix
-characters rule set by the user (`#t` → `#tracked`).
+characters rule set by the user (for example, `#w` → `#work`).
 """
 
 from __future__ import annotations

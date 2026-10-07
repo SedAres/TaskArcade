@@ -30,7 +30,7 @@ export function h(tag, attrs = {}, children = []) {
     else if (key === "html") el.innerHTML = value;
     else if (["title", "placeholder", "aria-label", "aria-description"].includes(key) && typeof value === "string") {
       const rawClass = String(attrs?.class || "");
-      const preserve = /(?:^|\s)(?:task-title|task-notes|task-notes-inline|subtask-title|template-name|template-title|session-title|queue-title|upnext-title|routine-title|routine-step-title|routine-description|routine-step-notes|user-content)(?:\s|$)/.test(rawClass) || Boolean(attrs?.["data-no-translate"]);
+      const preserve = /(?:^|\s)(?:task-title|task-notes|task-notes-inline|subtask-title|project-name|project-description|project-task-name|template-name|template-title|session-title|queue-title|upnext-title|routine-title|routine-step-title|routine-description|routine-step-notes|user-content)(?:\s|$)/.test(rawClass) || Boolean(attrs?.["data-no-translate"]);
       const translate = !preserve && typeof window !== "undefined" ? window.TaskArcadeI18n?.t : null;
       el.setAttribute(key, translate ? translate(value) : value);
     }
@@ -55,7 +55,7 @@ function appendChildren(parent, children) {
     if (Array.isArray(child)) appendChildren(parent, child);
     else if (child instanceof Node) parent.appendChild(child);
     else {
-      const rawTargets = ".task-title, .task-notes, .task-notes-inline, .subtask-title, .template-name, .template-title, .session-title, .queue-title, .upnext-title, .routine-title, .routine-step-title, .routine-description, .routine-step-notes, .user-content, [data-no-translate]";
+      const rawTargets = ".task-title, .task-notes, .task-notes-inline, .subtask-title, .project-name, .project-description, .project-task-name, .template-name, .template-title, .session-title, .queue-title, .upnext-title, .routine-title, .routine-step-title, .routine-description, .routine-step-notes, .user-content, [data-no-translate]";
       const preserve = parent.matches?.(rawTargets) || parent.closest?.(rawTargets);
       const translate = !preserve && typeof window !== "undefined" ? window.TaskArcadeI18n?.t : null;
       const value = translate ? translate(String(child)) : String(child);
@@ -151,6 +151,7 @@ export const store = {
     tags: [],
     aliases: {},
     tasks: [],
+    projects: [],
     recurrences: [],
     templates: [],
     events: [],

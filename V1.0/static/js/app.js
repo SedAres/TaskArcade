@@ -25,8 +25,9 @@ import { initPalette, initShortcuts, initFocusMode, openPalette } from "./palett
 import { initI18n } from "./i18n.js";
 import { initHistoryCalendar, provideHistoryRefresh } from "./history-calendar.js";
 import { initRoutineUI, renderRoutines } from "./routines-ui.js";
+import { initProjectsUI, renderProjects, provideRefresh as provideProjectsRefresh } from "./projects-ui.js";
 
-const TABS = ["today", "plan", "routines", "focus", "insights", "library"];
+const TABS = ["today", "plan", "projects", "routines", "focus", "insights", "library"];
 let refreshTimer = null;
 let refreshing = false;
 
@@ -68,6 +69,7 @@ export function renderAll() {
   renderSessionLog();
   renderTimerUI();
   renderRoutines();
+  renderProjects();
   renderBulbDaySelectSafe();
   renderLibrary();
   fillSettingsForm();
@@ -96,7 +98,7 @@ async function refreshInsightsSafe() {
 /* --------------------------------------------------------------------------
    Tabs
    -------------------------------------------------------------------------- */
-export function switchTab(tab, { scroll = true } = {}) {
+export function switchTab(tab, { scroll = true, runner = true } = {}) {
   const target = TABS.includes(tab) ? tab : "today";
   document.getElementById("appRoot").dataset.tab = target;
   prefs.set("lastTab", target);
@@ -105,6 +107,13 @@ export function switchTab(tab, { scroll = true } = {}) {
     const view = byId(`view${name.charAt(0).toUpperCase()}${name.slice(1)}`);
     if (view) view.hidden = name !== target;
   });
+  const runnerView = byId("routineRunnerView");
+  const routineHome = byId("viewRoutines");
+  const showRunner = target === "routines" && runner && Boolean(store.get("active_routine_run", null));
+  document.body.classList.toggle("is-routine-running", showRunner);
+  if (showRunner) byId("toasts")?.replaceChildren();
+  if (runnerView) runnerView.hidden = !showRunner;
+  if (routineHome && target === "routines") routineHome.hidden = showRunner;
 
   $$(".tab").forEach((button) => {
     const active = button.dataset.tab === target;
@@ -117,6 +126,7 @@ export function switchTab(tab, { scroll = true } = {}) {
   if (target === "insights") refreshInsightsSafe();
   if (target === "library") renderLibrary();
   if (target === "routines") renderRoutines();
+  if (target === "projects") renderProjects();
   if (target === "plan") renderTimeline();
   if (target === "today") renderTaskList();
   if (scroll) scrollToTop("auto");
@@ -137,7 +147,7 @@ export function initTabs() {
     }
     switchTab(button.dataset.tab);
   });
-  on("switch-tab", ({ tab, scroll } = {}) => switchTab(tab, { scroll }));
+  on("switch-tab", ({ tab, scroll, runner } = {}) => switchTab(tab, { scroll, runner }));
   on("theme", () => {
     renderNow();
     renderTaskList();
@@ -422,6 +432,7 @@ export async function boot() {
   initDayControls();
   initNowLiveUpdates();
   initRoutineUI();
+  initProjectsUI();
   initInsights();
   initLibrary();
   initSettings();
@@ -441,6 +452,7 @@ export async function boot() {
   provideSettingsRefresh(() => refresh());
   provideNowRefresh(() => refresh());
   provideHistoryRefresh(() => refresh());
+  provideProjectsRefresh(() => refresh());
 
   initFocusEngine();
 
@@ -542,6 +554,7 @@ window.TaskArcade = {
     insights: refreshInsights,
     upNext: renderUpNext,
     library: renderLibrary,
+    projects: renderProjects,
     settings: fillSettingsForm,
     bulkDays: renderBulkDaySelect,
     themes: renderThemeGallery,
