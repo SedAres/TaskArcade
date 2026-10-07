@@ -18,6 +18,10 @@ indexes (1, 2, 3, ...) that only ever advance when the user presses
 import os
 import re
 import sqlite3
+import json
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
 from datetime import datetime, timezone
 
 from flask import Flask, g, jsonify, render_template, request, Response
@@ -279,6 +283,44 @@ def script_js():
 @app.route("/api/state")
 def api_state():
     return jsonify(full_state())
+
+
+# ---------------------------------------------------------------------------
+# Same-origin bridge for the external work/free service.
+# The browser cannot read that service directly when it does not enable CORS.
+# ---------------------------------------------------------------------------
+def external_request(path, method="GET", payload=None):
+    base = get_db().execute("SELECT server_url FROM settings WHERE id = 1").fetchone()["server_url"]
+    base = (base or "").strip().rstrip("/")
+    if not base or not base.startswith(("http://", "https://")):
+        return jsonify({"error": "Configure a valid external server URL in Settings"}), 400
+    body = json.dumps(payload).encode("utf-8") if payload is not None else None
+    req = Request(base + path, data=body, method=method,
+                  headers={"Content-Type": "application/json", "Accept": "application/json"})
+    try:
+        with urlopen(req, timeout=5) as response:
+            content = response.read()
+            return Response(content, status=response.status,
+                            mimetype=response.headers.get_content_type())
+    except HTTPError as error:
+        return Response(error.read(), status=error.code,
+                        mimetype=error.headers.get_content_type() or "application/json")
+    except (URLError, TimeoutError, OSError) as error:
+        return jsonify({"error": "Could not reach external work/free service", "detail": str(error)}), 502
+
+
+@app.route("/api/external/state")
+def api_external_state():
+    return external_request("/api/state")
+
+
+@app.route("/api/external/mode", methods=["POST", "PUT"])
+def api_external_mode():
+    sid = request.args.get("s", "")
+    if not sid or len(sid) > 200:
+        return jsonify({"error": "A valid session id is required"}), 400
+    return external_request(f"/api/sessions/099e95e6/mode?{urlencode({'s': sid})}", request.method,
+                            request.get_json(silent=True) or {})
 
 
 # ---------------------------------------------------------------------------

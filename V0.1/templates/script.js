@@ -660,7 +660,7 @@
     if (!base) {
       return;
     }
-    const url = base.replace(/\/+$/, "") + "/api/state";
+    const url = "/api/external/state";
     try {
       const res = await fetch(url);
       if (!res.ok) {
@@ -702,7 +702,7 @@
       return;
     }
     const newMode = externalMode === "work" ? "free" : "work";
-    const url = `${base.replace(/\/+$/, "")}/api/sessions/099e95e6/mode?s=${encodeURIComponent(externalSessionId)}`;
+    const url = `/api/external/mode?s=${encodeURIComponent(externalSessionId)}`;
     const payload = JSON.stringify({ mode: newMode });
 
     try {
